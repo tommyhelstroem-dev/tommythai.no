@@ -34,13 +34,23 @@ p{margin-bottom:.8rem;font-size:1.05rem}
 .kort div{background:#fffdf7;border:1px solid var(--linje);border-top:3px solid var(--gull);padding:1.1rem;border-radius:4px}
 .kort strong{display:block;color:var(--safir);margin-bottom:.3rem;font-family:Arial,Helvetica,sans-serif;font-size:.95rem}
 .kort span{font-size:.95rem;color:var(--tekst-svak)}
-.knapp{display:inline-block;background:var(--safir);color:#fff;text-decoration:none;padding:.85rem 1.6rem;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-weight:700;letter-spacing:.06em;border:2px solid var(--safir);transition:.2s}
+.knapp{display:inline-block;background:var(--safir);color:#fff;text-decoration:none;padding:.85rem 1.6rem;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-weight:700;letter-spacing:.06em;border:2px solid var(--safir);transition:.2s;cursor:pointer}
 .knapp:hover{background:var(--safir-dyp);border-color:var(--gull)}
 .knapper{display:flex;gap:.8rem;flex-wrap:wrap}
 address{font-style:normal;font-size:1rem}
 address a{color:var(--safir);text-decoration:none;border-bottom:1px solid var(--gull)}
 footer{background:var(--safir-dyp);color:#d7dde8;text-align:center;padding:1.5rem;font-size:.85rem;font-family:Arial,Helvetica,sans-serif;letter-spacing:.05em}
 footer b{color:var(--gull-lys)}
+form{display:grid;gap:.8rem}
+.rad{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+label{display:block;font-family:Arial,Helvetica,sans-serif;font-size:.85rem;color:var(--safir);font-weight:700;margin-bottom:.25rem;letter-spacing:.03em}
+input,select,textarea{width:100%;padding:.7rem .8rem;border:1px solid var(--linje);border-radius:4px;background:#fffdf7;font:inherit;font-size:1rem;color:var(--tekst)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gull);border-color:var(--gull)}
+textarea{min-height:120px;resize:vertical}
+.samtykke{font-weight:400;display:flex;gap:.6rem;align-items:flex-start;font-size:.9rem;color:var(--tekst-svak)}
+.samtykke input{width:auto;margin-top:.3rem}
+.liten{font-size:.85rem;color:var(--tekst-svak)}
+@media(max-width:520px){.rad{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -68,6 +78,42 @@ footer b{color:var(--gull-lys)}
 </div>
 </section>
 
+<section id="forespoersel">
+<h2>Send catering-forespørsel</h2>
+<p class="liten">Fyll ut skjemaet, så svarer jeg på e-post – normalt innen 1–2 virkedager.</p>
+<form action="https://api.web3forms.com/submit" method="POST">
+<input type="hidden" name="access_key" value="9103aeab-246b-48b5-8df5-68ad47ae24ba">
+<input type="hidden" name="subject" value="Catering-forespørsel via tommythai.no">
+<input type="hidden" name="from_name" value="tommythai.no">
+<input type="hidden" name="redirect" value="https://tommythai.no/takk.html">
+<input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+<div class="rad">
+<div><label for="navn">Navn *</label><input id="navn" name="Navn" type="text" required autocomplete="name"></div>
+<div><label for="epost">E-post *</label><input id="epost" name="email" type="email" required autocomplete="email"></div>
+</div>
+<div class="rad">
+<div><label for="tlf">Telefon</label><input id="tlf" name="Telefon" type="tel" autocomplete="tel"></div>
+<div><label for="dato">Ønsket dato</label><input id="dato" name="Dato" type="date"></div>
+</div>
+<div class="rad">
+<div><label for="gjester">Antall gjester</label><input id="gjester" name="Antall gjester" type="number" min="1" inputmode="numeric"></div>
+<div><label for="type">Type arrangement</label>
+<select id="type" name="Type arrangement">
+<option value="">Velg…</option>
+<option>Selskap / privat</option>
+<option>Bedrift / kantine</option>
+<option>Bryllup</option>
+<option>Konferanse / event</option>
+<option>Annet</option>
+</select></div>
+</div>
+<div><label for="melding">Melding *</label><textarea id="melding" name="Melding" required placeholder="Fortell kort om arrangementet, sted og ønsker."></textarea></div>
+<label class="samtykke"><input type="checkbox" name="Samtykke" value="Ja" required> Jeg samtykker til at opplysningene brukes til å besvare forespørselen min. De deles ikke videre og slettes når saken er avsluttet.</label>
+<div class="h-captcha" data-captcha="true"></div>
+<div class="knapper"><button class="knapp" type="submit">Send forespørsel</button></div>
+</form>
+</section>
+
 <section>
 <h2>Kontakt</h2>
 <address>
@@ -82,5 +128,6 @@ footer b{color:var(--gull-lys)}
 
 <footer>© 2026 <b>Tommythai</b> · Worldwide</footer>
 
+<script src="https://web3forms.com/client/script.js" async defer></script>
 </body>
 </html>
