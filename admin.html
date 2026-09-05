@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin – Tommythai</title>
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" href="logo_mark.png">
+<link rel="icon" href="logo_mark.svg">
 <style>
 body{margin:0;background:#06101e;color:#dde8f8;font-family:system-ui,-apple-system,sans-serif}
-#root{min-height:100vh}
+#root{min-height:100vh;position:relative;z-index:1}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url(logo_mark.svg) center 50% / min(95vh,95vw) no-repeat;opacity:.14}
 .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .gate-box{background:#0d1f3c;border:1px solid #1e3d6b;border-radius:12px;padding:32px 28px;max-width:380px;width:100%;text-align:center}
 .gate-box h1{color:#fff;font-size:18px;margin:14px 0 6px;font-family:Georgia,serif;letter-spacing:.1em}
