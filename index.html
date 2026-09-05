@@ -10,7 +10,7 @@
 --papir:#f7f4ec;
 --papir-2:#efe9db;
 --safir:#0f3d7a;
---safir-dyp:#0a2a55;
+--safir-dyp:#0a1628;
 --gull:#c9a227;
 --gull-lys:#e6c85a;
 --tekst:#1e2430;
@@ -20,12 +20,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--papir);color:var(--tekst);font-family:Georgia,"Times New Roman",serif;line-height:1.6}
 body{min-height:100vh;display:flex;flex-direction:column}
-header{padding:3.5rem 1.5rem 2rem;text-align:center;background:
-radial-gradient(ellipse at top,#fffdf6 0%,var(--papir) 60%)}
-.logo{width:min(220px,55vw);height:auto;display:block;margin:0 auto 1.25rem;filter:drop-shadow(0 6px 14px rgba(15,61,122,.18))}
+header{padding:2.5rem 1.5rem 2rem;text-align:center;background:var(--safir-dyp)}
+.logo{width:min(560px,92vw);height:auto;display:block;margin:0 auto 1.25rem;border-radius:32px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 h1{font-size:clamp(1.9rem,5vw,3rem);color:var(--safir);letter-spacing:.04em;font-weight:600}
-.under{color:var(--gull);text-transform:uppercase;letter-spacing:.28em;font-size:.8rem;margin-top:.5rem;font-family:Arial,Helvetica,sans-serif}
-.strek{width:64px;height:2px;background:linear-gradient(90deg,var(--safir),var(--gull));margin:1.5rem auto}
+.under{color:var(--gull-lys);text-transform:uppercase;letter-spacing:.28em;font-size:.8rem;margin-top:.5rem;font-family:Arial,Helvetica,sans-serif}
+.strek{width:64px;height:2px;background:var(--gull);margin:1.25rem auto 0}
 main{flex:1;max-width:760px;margin:0 auto;padding:0 1.5rem 3rem;width:100%}
 section{margin-bottom:2.5rem}
 h2{color:var(--safir);font-size:1.15rem;text-transform:uppercase;letter-spacing:.18em;font-family:Arial,Helvetica,sans-serif;font-weight:700;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:1px solid var(--linje)}
@@ -48,43 +48,8 @@ footer b{color:var(--gull-lys)}
 <body>
 
 <header>
-<svg class="logo" viewBox="0 0 200 200" role="img" aria-label="Tommythai-logo">
-<defs>
-<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0" stop-color="#e6c85a"/><stop offset="1" stop-color="#b8901c"/>
-</linearGradient>
-<linearGradient id="s" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#164a8f"/><stop offset="1" stop-color="#0a2a55"/>
-</linearGradient>
-</defs>
-<polygon points="100,6 181,53 181,147 100,194 19,147 19,53" fill="url(#s)" stroke="url(#g)" stroke-width="4"/>
-<polygon points="100,18 171,59 171,141 100,182 29,141 29,59" fill="none" stroke="#e6c85a" stroke-width="1.2" opacity=".6"/>
-<g fill="url(#g)">
-<rect x="44" y="70" width="10" height="70" rx="1"/>
-<rect x="40" y="64" width="18" height="6" rx="1"/>
-<rect x="40" y="140" width="18" height="6" rx="1"/>
-<rect x="146" y="70" width="10" height="70" rx="1"/>
-<rect x="142" y="64" width="18" height="6" rx="1"/>
-<rect x="142" y="140" width="18" height="6" rx="1"/>
-</g>
-<text x="49" y="158" font-size="8" fill="#e6c85a" text-anchor="middle" font-family="Georgia,serif">J</text>
-<text x="151" y="158" font-size="8" fill="#e6c85a" text-anchor="middle" font-family="Georgia,serif">B</text>
-<g fill="none" stroke="#e6c85a" stroke-width="1.4" opacity=".85">
-<polygon points="100,62 133,119 67,119"/>
-<polygon points="100,138 133,81 67,81"/>
-</g>
-<g fill="none" stroke="url(#g)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
-<path d="M100,72 L72,132"/><path d="M100,72 L128,132"/>
-<path d="M70,118 L100,148 L130,118"/>
-</g>
-<circle cx="100" cy="72" r="4.5" fill="#e6c85a"/>
-<g transform="translate(100,104)">
-<path d="M-15,0 Q0,-11 15,0 Q0,11 -15,0 Z" fill="#f7f4ec" stroke="#e6c85a" stroke-width="1.2"/>
-<circle r="4.6" fill="#0f3d7a"/><circle r="1.8" fill="#e6c85a"/>
-</g>
-</svg>
-
-<h1>Tommy Aarvik Helstrøm</h1>
+<img class="logo" src="logo.jpg" alt="Tommy Aarvik Helstrøm – Catering &amp; Import">
+<h1 class="sr">Tommy Aarvik Helstrøm</h1>
 <div class="under">Kokk · Catering · Import</div>
 <div class="strek"></div>
 </header>
