@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin – Tommythai</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="logo_mark.png">
+<style>
+body{margin:0;background:#06101e;color:#dde8f8;font-family:system-ui,-apple-system,sans-serif}
+#root{min-height:100vh}
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate-box{background:#0d1f3c;border:1px solid #1e3d6b;border-radius:12px;padding:32px 28px;max-width:380px;width:100%;text-align:center}
+.gate-box h1{color:#fff;font-size:18px;margin:14px 0 6px;font-family:Georgia,serif;letter-spacing:.1em}
+.gate-box p{color:#7a96b8;font-size:13px;margin:0 0 18px}
+.gbtn{background:#c9a84c;color:#000;border:none;border-radius:6px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer}
+.gbtn.sec{background:transparent;color:#dde8f8;border:1px solid #1e3d6b}
+.err{color:#e05050;font-size:12px;margin-top:12px}
+.topbar{position:fixed;right:12px;top:10px;z-index:50;display:flex;gap:8px;align-items:center;font-size:11px;color:#7a96b8}
+.topbar button{background:transparent;color:#7a96b8;border:1px solid #1e3d6b;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+.sync{width:8px;height:8px;border-radius:50%;background:#3db87a;display:inline-block}
+.sync.busy{background:#e09830}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ── Firebase-oppsett ──────────────────────────────────────────────────────
+const ADMIN_EMAILS=["tommy.helstroem@gmail.com"];
+const firebaseConfig=/*FIREBASE_CONFIG*/{apiKey:"AIzaSyAHDtu1frWCXGxM8aTLKkfl-dMaAittkUM",authDomain:"hjernedump-b6b78.firebaseapp.com",projectId:"hjernedump-b6b78",storageBucket:"hjernedump-b6b78.firebasestorage.app",messagingSenderId:"848745072915",appId:"1:848745072915:web:928d3b6bc043fe4365b2e6"}/*/FIREBASE_CONFIG*/;
+let fbReady=false;
+try{ if(firebaseConfig){ firebase.initializeApp(firebaseConfig); fbReady=true; } }catch(e){ console.error(e); }
+</script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect}=React;
+// ── Lagringslag: Firestore (users/{uid}/data/{key}) ──────────────────────
+const mem={};
+let CUR_UID=null;
+const db={
+col(){ return firebase.firestore().collection("users").doc(CUR_UID).collection("data"); },
+async get(k){ try{ if(CUR_UID){ const d=await db.col().doc(k).get(); if(d.exists) return JSON.parse(d.data().value); } }catch(e){ console.error(e); } return mem[k]??null; },
+async set(k,v){ mem[k]=v; try{ if(CUR_UID){ window.__setSync&&window.__setSync(true); await db.col().doc(k).set({value:JSON.stringify(v),updated:firebase.firestore.FieldValue.serverTimestamp()}); window.__setSync&&window.__setSync(false); } }catch(e){ console.error(e); alert("Lagring feilet: "+e.message); } },
+};
+// ── Innloggingsport ───────────────────────────────────────────────────────
+function Gate(){
+const [user,setUser]=useState(undefined),[err,setErr]=useState(""),[busy,setBusy]=useState(false);
+const [email,setEmail]=useState(ADMIN_EMAILS[0]),[pw,setPw]=useState(""),[wait,setWait]=useState(false);
+useEffect(()=>{ if(!fbReady){setUser(null);return;} return firebase.auth().onAuthStateChanged(u=>setUser(u)); },[]);
+useEffect(()=>{ window.__setSync=b=>setBusy(b); },[]);
+const nice=e=>/wrong-password|invalid-credential|invalid-login/.test(e.code||"")?"Feil e-post eller passord.":/too-many/.test(e.code||"")?"For mange forsøk. Vent litt.":/user-not-found/.test(e.code||"")?"Brukeren finnes ikke.":e.message;
+const loginPw=async ev=>{ ev.preventDefault(); setErr(""); setWait(true); try{ await firebase.auth().signInWithEmailAndPassword(email.trim(),pw); }catch(e){ setErr(nice(e)); } setWait(false); };
+const loginGoogle=async()=>{ setErr(""); try{ await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }catch(e){ setErr(nice(e)); } };
+const reset=async()=>{ setErr(""); try{ await firebase.auth().sendPasswordResetEmail(email.trim()); setErr("E-post for nytt passord er sendt."); }catch(e){ setErr(nice(e)); } };
+const logout=()=>firebase.auth().signOut();
+const Box=({children})=>(<div className="gate"><div className="gate-box"><LogoSVG w={90} h={90} noText={true}/>{children}</div></div>);
+const fi={width:"100%",boxSizing:"border-box",background:"#0a1a2e",border:"1px solid #1e3d6b",color:"#dde8f8",padding:"9px 11px",borderRadius:6,fontSize:13,marginBottom:8,outline:"none"};
+if(!fbReady) return <Box><h1>ADMIN</h1><p>Firebase er ikke konfigurert ennå. Lim inn firebaseConfig i admin.html.</p></Box>;
+if(user===undefined) return <Box><h1>ADMIN</h1><p>Laster…</p></Box>;
+if(!user) return <Box><h1>ADMIN</h1><p>Kun for Tommy Aarvik Helstrøm Catering &amp; Import AS.</p>
+<form onSubmit={loginPw}>
+<input style={fi} type="email" autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-post"/>
+<input style={fi} type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Passord" autoFocus/>
+<button className="gbtn" type="submit" disabled={wait} style={{width:"100%"}}>{wait?"Logger inn…":"Logg inn"}</button>
+</form>
+<div style={{display:"flex",gap:8,justifyContent:"center",marginTop:10}}>
+<button className="gbtn sec" type="button" onClick={loginGoogle}>Google-innlogging</button>
+<button className="gbtn sec" type="button" onClick={reset}>Glemt passord</button>
+</div>
+{err&&<div className="err">{err}</div>}</Box>;
+if(!ADMIN_EMAILS.includes((user.email||"").toLowerCase())) return <Box><h1>INGEN TILGANG</h1><p>{user.email} har ikke tilgang til dette området.</p><button className="gbtn sec" onClick={logout}>Logg ut</button></Box>;
+CUR_UID=user.uid;
+return (<>
+<div className="topbar"><span className={"sync"+(busy?" busy":"")}></span>{user.email}<button onClick={logout}>Logg ut</button></div>
+<Portal/>
+</>);
+}
+// ── Fakturaprogram (original kode) ───────────────────────────────────────
+const C = {
+bg:"#06101e",side:"#040c18",panel:"#0d1f3c",card:"#0f2748",
+bdr:"#1e3d6b",gold:"#c9a84c",goldL:"#e8c96a",
+blueM:"#2a5298",blueL:"#4a7ab5",text:"#dde8f8",textD:"#7a96b8",
+white:"#ffffff",red:"#e05050",green:"#3db87a",warn:"#e09830",
+};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function parseTime(s){const[h,m]=String(s||"0:0").split(":").map(Number);return h*60+m;}
+function minToH(m){return+(m/60).toFixed(2);}
+function calcH(e,s){
+const st=parseTime(e.start),en=parseTime(e.end),tot=en-st;
+if(tot<=0)return{normal:0,evening:0,weekend:0,total:0};
+const dow=new Date(e.date).getDay(),isSun=dow===0,isSat=dow===6;
+const ev=(s.eveningStart||21)*60,weStart=(s.weekendStart??12)*60;
+if(isSun)return{normal:0,evening:0,weekend:minToH(tot),total:minToH(tot)};
+if(isSat){
+let nm=0,em=0,wm=0;
+if(en<=weStart){if(en<=ev)nm=tot;else if(st>=ev)em=tot;else{nm=ev-st;em=en-ev;}}
+else if(st>=weStart){wm=tot;}
+else{wm=en-weStart;const b=weStart;if(b<=ev)nm=weStart-st;else if(st>=ev)em=weStart-st;else{nm=ev-st;em=b-ev;}}
+return{normal:minToH(nm),evening:minToH(em),weekend:minToH(wm),total:minToH(tot)};
+}
+let nm=0,em=0;
+if(en<=ev)nm=tot;else if(st>=ev)em=tot;else{nm=ev-st;em=en-ev;}
+return{normal:minToH(nm),evening:minToH(em),weekend:0,total:minToH(tot)};
+}
+function calcAmt(e,s){
+const h=calcH(e,s),r=s.normalRate||0;
+return+(h.normal*r+h.evening*r*(1+(s.eveningRate||0)/100)+h.weekend*r*(1+(s.weekendRate||0)/100)).toFixed(2);
+}
+function fmtM(n){return(+n||0).toLocaleString("nb-NO",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtD(d){try{return new Date(d).toLocaleDateString("nb-NO");}catch{return d;}}
+const inp={background:"#0a1a2e",border:`1px solid ${C.bdr}`,color:C.text,padding:"7px 10px",borderRadius:5,fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
+const crd={background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,padding:"18px 20px",marginBottom:16};
+const Btn=(v="pri")=>({padding:"8px 16px",borderRadius:6,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,
+background:v==="pri"?C.gold:v==="red"?C.red:v==="sec"?C.blueM:"transparent",color:v==="pri"?"#000":C.white});
+const DEFSETT={eveningStart:21,eveningRate:20,weekendStart:12,weekendRate:25,normalRate:0,
+invoicePrefix:"",nextNum:1000,vatRate:0,bankAccount:"6032.0720039",email:"tommy.helstroem@gmail.com",
+phone:"+47 971 50 178",address:"Kai Gata 90, 4280 Skudeneshavn",orgNr:"925 415 537",
+companyName:"Tommy Aarvik Helstrøm Catering & Import AS"};
+const EXPENSE_CATS=["Feriepenger","Reise","Mat og drikke","Utstyr og verktøy","Telefon og internett","Husleie / kontor","Forsikring","Andre utgifter"];
+const SEED={
+settings:{normalRate:275,eveningStart:21,eveningRate:20,weekendStart:12,weekendRate:25,vatRate:0,invoicePrefix:"TAH"},
+customer:{name:"Havn Hotell og Restaurant AS",address:"Torget 6, 4280 SKUDENESHAVN",orgNr:"930841412",email:"",phone:""},
+time:[
+{date:"2026-07-23",start:"13:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-24",start:"09:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-25",start:"09:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-26",start:"10:00",end:"19:00",desc:"utleie kokk"},
+{date:"2026-07-28",start:"09:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-29",start:"10:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-30",start:"10:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-07-31",start:"10:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-08-01",start:"09:00",end:"22:00",desc:"utleie kokk"},
+{date:"2026-08-02",start:"10:00",end:"20:00",desc:"utleie kokk"},
+],
+expenses:[
+{date:"2026-08-02",category:"Utstyr og verktøy",desc:"vask av uniform april til august",amount:1999,vatIncluded:false},
+{date:"2026-08-02",category:"Utstyr og verktøy",desc:"sko",amount:1500,vatIncluded:false},
+{date:"2026-08-02",category:"Mat og drikke",desc:"kostutgifter",amount:2500,vatIncluded:false},
+],
+};
+function LogoSVG({w=80,h=88,fp=false,noText=false}){
+const gc=fp?"#1a3a6b":C.gold,bc=fp?"#5a7aaa":C.blueL;
+const vb=noText?"0 0 200 200":"0 0 200 220";
+return(
+<svg viewBox={vb} width={w} height={h} style={{display:"block",margin:"0 auto"}} xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="88" fill="none" stroke={bc} strokeWidth="1" opacity=".5"/>
+<circle cx="100" cy="100" r="72" fill="none" stroke={bc} strokeWidth=".8" strokeDasharray="3,5" opacity=".35"/>
+<polygon points="100,22 158,118 42,118" fill="none" stroke={bc} strokeWidth="1.2" opacity=".45"/>
+<polygon points="100,178 158,82 42,82" fill="none" stroke={bc} strokeWidth="1.2" opacity=".45"/>
+<line x1="12" y1="100" x2="65" y2="100" stroke={bc} strokeWidth=".7" opacity=".4"/>
+<line x1="135" y1="100" x2="188" y2="100" stroke={bc} strokeWidth=".7" opacity=".4"/>
+<rect x="10" y="68" width="9" height="52" fill="none" stroke={bc} strokeWidth="1" opacity=".45"/>
+<rect x="8" y="63" width="13" height="6" fill={bc} opacity=".3"/>
+<rect x="8" y="120" width="13" height="6" fill={bc} opacity=".3"/>
+<rect x="181" y="68" width="9" height="52" fill="none" stroke={bc} strokeWidth="1" opacity=".45"/>
+<rect x="179" y="63" width="13" height="6" fill={bc} opacity=".3"/>
+<rect x="179" y="120" width="13" height="6" fill={bc} opacity=".3"/>
+<polygon points="100,55 135,75 135,115 100,135 65,115 65,75" fill={fp?"#e8f2fd":"#071525"} stroke={gc} strokeWidth="3"/>
+<ellipse cx="100" cy="95" rx="22" ry="14" fill="none" stroke={gc} strokeWidth="1.5" opacity=".9"/>
+<path d="M78,95 Q100,78 122,95" fill="none" stroke={gc} strokeWidth="1.2" opacity=".7"/>
+<circle cx="100" cy="95" r="7" fill={gc}/>
+<circle cx="103" cy="92" r="2.5" fill={C.goldL} opacity=".55"/>
+<circle cx="82" cy="95" r="2" fill={gc} opacity=".65"/>
+<circle cx="118" cy="95" r="2" fill={gc} opacity=".65"/>
+<circle cx="91" cy="82" r="1.5" fill={gc} opacity=".5"/>
+<circle cx="109" cy="82" r="1.5" fill={gc} opacity=".5"/>
+<circle cx="91" cy="108" r="1.5" fill={gc} opacity=".5"/>
+<circle cx="109" cy="108" r="1.5" fill={gc} opacity=".5"/>
+{!fp&&!noText&&<>
+<text x="100" y="162" textAnchor="middle" fill={C.white} fontSize="9.5" fontFamily="Georgia,serif" letterSpacing="2.5" fontWeight="bold">TOMMY AARVIK HELSTRØM</text>
+<text x="100" y="173" textAnchor="middle" fill={gc} fontSize="8" letterSpacing="5">· · ·</text>
+<text x="100" y="183" textAnchor="middle" fill={C.blueL} fontSize="7" letterSpacing="2.5">CATERING | IMPORT</text>
+<text x="100" y="197" textAnchor="middle" fill={C.textD} fontSize="6.5" letterSpacing="2">· VI ·</text>
+</>}
+</svg>
+);
+}
+function buildInvoiceHTML(inv,settings){
+const tR=inv.timeEntries||[],expR=inv.expenseLines||[],exR=inv.extraLines||[];
+const fm=n=>(+(n||0)).toLocaleString("nb-NO",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fd=d=>{try{return new Date(d).toLocaleDateString("nb-NO");}catch{return d;}};
+const wm=`<svg viewBox="0 0 200 200" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;height:520px;opacity:0.16;pointer-events:none;z-index:0;" xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="88" fill="none" stroke="#1a3a6b" stroke-width="1"/>
+<circle cx="100" cy="100" r="72" fill="none" stroke="#1a3a6b" stroke-width=".8" stroke-dasharray="3,5"/>
+<polygon points="100,22 158,118 42,118" fill="none" stroke="#1a3a6b" stroke-width="1.5"/>
+<polygon points="100,178 158,82 42,82" fill="none" stroke="#1a3a6b" stroke-width="1.5"/>
+<polygon points="100,55 135,75 135,115 100,135 65,115 65,75" fill="none" stroke="#c9a84c" stroke-width="3"/>
+<ellipse cx="100" cy="95" rx="22" ry="14" fill="none" stroke="#c9a84c" stroke-width="2"/>
+<circle cx="100" cy="95" r="8" fill="#c9a84c"/>
+<rect x="10" y="68" width="9" height="52" fill="none" stroke="#1a3a6b" stroke-width="1"/>
+<rect x="181" y="68" width="9" height="52" fill="none" stroke="#1a3a6b" stroke-width="1"/>
+</svg>`;
+const logo=`<svg viewBox="0 0 200 200" width="76" height="76" style="display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="88" fill="none" stroke="#5a7aaa" stroke-width="1" opacity=".5"/>
+<circle cx="100" cy="100" r="72" fill="none" stroke="#5a7aaa" stroke-width=".8" stroke-dasharray="3,5" opacity=".35"/>
+<polygon points="100,22 158,118 42,118" fill="none" stroke="#5a7aaa" stroke-width="1.2" opacity=".45"/>
+<polygon points="100,178 158,82 42,82" fill="none" stroke="#5a7aaa" stroke-width="1.2" opacity=".45"/>
+<rect x="10" y="68" width="9" height="52" fill="none" stroke="#5a7aaa" stroke-width="1" opacity=".45"/>
+<rect x="8" y="63" width="13" height="6" fill="#5a7aaa" opacity=".3"/>
+<rect x="8" y="120" width="13" height="6" fill="#5a7aaa" opacity=".3"/>
+<rect x="181" y="68" width="9" height="52" fill="none" stroke="#5a7aaa" stroke-width="1" opacity=".45"/>
+<rect x="179" y="63" width="13" height="6" fill="#5a7aaa" opacity=".3"/>
+<rect x="179" y="120" width="13" height="6" fill="#5a7aaa" opacity=".3"/>
+<polygon points="100,55 135,75 135,115 100,135 65,115 65,75" fill="#e8f2fd" stroke="#1a3a6b" stroke-width="3"/>
+<ellipse cx="100" cy="95" rx="22" ry="14" fill="none" stroke="#1a3a6b" stroke-width="1.5"/>
+<path d="M78,95 Q100,78 122,95" fill="none" stroke="#1a3a6b" stroke-width="1.2" opacity=".7"/>
+<circle cx="100" cy="95" r="7" fill="#1a3a6b"/>
+<circle cx="82" cy="95" r="2" fill="#1a3a6b" opacity=".65"/>
+<circle cx="118" cy="95" r="2" fill="#1a3a6b" opacity=".65"/>
+</svg>`;
+const row=(cells,i)=>`<tr style="background:${i%2===0?"rgba(246,249,253,0.55)":"transparent"};border-bottom:1px solid #c5d8ef">${cells}</tr>`;
+const td=(c,al="left",b=false)=>`<td style="padding:9px 11px;color:${b?"#1a2a40":"#5a7a9a"};text-align:${al};${b?"font-weight:600;":""}">${c}</td>`;
+let ri=0;
+const timeHTML=tR.map(e=>{
+const hh=e.hours||{};const isWE=new Date(e.date).getDay()===0||new Date(e.date).getDay()===6;
+const lbl=isWE?`Helg +${settings.weekendRate}%`:hh.evening>0?`Kveld +${settings.eveningRate}%`:"Normal";
+return row(td(`<span style="color:#1a2a40">${e.desc||"Timearbeid"}</span> <span style="font-size:10px">(${lbl})</span>`)+td(fd(e.date))+td(`${hh.total||0}t`,"right",true)+td("time","right")+td(`kr ${fm(settings.normalRate)}`,"right")+td(`kr ${fm(e.amount||0)}`,"right",true),ri++);
+}).join("");
+const expHTML=expR.map(e=>row(td(`<span style="color:#1a2a40">${e.desc}</span> <span style="font-size:10px">(${e.category})</span>`)+td(fd(e.date))+td("1","right",true)+td("stk","right")+td(`kr ${fm(e.amount)}`,"right")+td(`kr ${fm(e.amount)}`,"right",true),ri++)).join("");
+const exHTML=exR.map(l=>row(td(`<span style="color:#1a2a40">${l.desc}</span>`)+td("—")+td(`${l.qty}`,"right",true)+td(l.unit,"right")+td(`kr ${fm(l.price)}`,"right")+td(`kr ${fm(l.qty*l.price)}`,"right",true),ri++)).join("");
+return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Faktura ${inv.number}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#fff}
+@media print{@page{margin:0;size:A4}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:9px 11px;color:#fff;font-weight:600;font-size:11px;letter-spacing:.05em}</style></head><body>
+<div style="position:relative;min-height:100vh">
+${wm}
+<div style="background:#e8f2fc;padding:26px 36px 18px;border-bottom:3px solid #c9a84c;position:relative;z-index:1">
+<div style="text-align:center">
+${logo}
+<div style="color:#1a3a6b;font-family:Georgia,serif;font-size:14px;font-weight:bold;letter-spacing:.15em;margin-top:6px">TOMMY AARVIK HELSTRØM</div>
+<div style="color:#c9a84c;font-size:8.5px;letter-spacing:.2em;margin:3px 0">· CATERING | IMPORT ·</div>
+<div style="color:#5a7a9a;font-size:11px;margin-top:4px;line-height:1.7">
+<div>Kai Gata 90, 4280 Skudeneshavn</div><div>Org.nr: 925 415 537</div>
+<div>${settings.email} | ${settings.phone}</div>
+</div>
+</div>
+<div style="position:absolute;right:36px;top:26px;text-align:right">
+<div style="color:#1a3a6b;font-size:28px;font-weight:800;font-family:Georgia,serif">FAKTURA</div>
+<div style="color:#c9a84c;font-size:14px;font-weight:700;margin-top:4px">${inv.number}</div>
+<div style="color:#5a7a9a;font-size:11px;margin-top:6px;line-height:1.9">
+<div>Fakturadato: <strong style="color:#1a2a40">${fd(inv.date)}</strong></div>
+<div>Forfallsdato: <strong style="color:#1a2a40">${fd(inv.dueDate)}</strong></div>
+</div>
+</div>
+</div>
+<div style="padding:16px 36px;display:flex;justify-content:space-between;position:relative;z-index:1">
+<div>
+<div style="color:#5a7a9a;font-size:8px;letter-spacing:.15em;margin-bottom:4px">FAKTURERT TIL</div>
+<div style="color:#1a2a40;font-size:14px;font-weight:700">${inv.customerName}</div>
+${inv.customerAddr?`<div style="color:#5a7a9a;font-size:12px">${inv.customerAddr}</div>`:""}
+${inv.customerOrg?`<div style="color:#5a7a9a;font-size:12px">Org.nr: ${inv.customerOrg}</div>`:""}
+</div>
+<div style="text-align:right">
+<div style="color:#5a7a9a;font-size:8px;letter-spacing:.15em;margin-bottom:4px">BANKDETALJER</div>
+<div style="color:#1a2a40;font-size:12px">Konto: <strong>${settings.bankAccount}</strong></div>
+<div style="color:#5a7a9a;font-size:11px;margin-top:2px">Merk betaling med fakturanr.</div>
+</div>
+</div>
+<div style="padding:0 36px 18px;position:relative;z-index:1">
+<table>
+<thead><tr style="background:#1a3a6b">
+<th style="text-align:left">Beskrivelse</th><th style="text-align:left">Dato</th>
+<th style="text-align:right">Timer/Ant.</th><th style="text-align:right">Enhet</th>
+<th style="text-align:right">Sats / Pris</th><th style="text-align:right">Beløp</th>
+</tr></thead>
+<tbody>${timeHTML}${expHTML}${exHTML}</tbody>
+</table>
+<div style="display:flex;justify-content:flex-end;margin-top:16px">
+<div style="width:290px">
+<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #c5d8ef;color:#5a7a9a;font-size:12px">
+<span>Subtotal eks. MVA</span><span style="color:#1a2a40">kr ${fm(inv.subtotal)}</span></div>
+<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #c5d8ef;color:#5a7a9a;font-size:12px">
+<span>MVA (${settings.vatRate}%)</span><span style="color:#1a2a40">kr ${fm(inv.vat)}</span></div>
+<div style="display:flex;justify-content:space-between;padding:10px 12px;background:#e8f2fc;margin-top:4px;border-radius:4px">
+<span style="color:#1a3a6b;font-weight:700;font-size:13px">TOTALT Å BETALE</span>
+<span style="color:#c9a84c;font-weight:800;font-size:15px">kr ${fm(inv.totalIncVat)}</span></div>
+</div>
+</div>
+</div>
+${inv.notes?`<div style="padding:0 36px 18px;position:relative;z-index:1">
+<div style="background:#e8f2fc;padding:10px 14px;border-radius:5px;border-left:3px solid #c9a84c">
+<div style="color:#5a7a9a;font-size:8px;letter-spacing:.15em;margin-bottom:4px">MERKNADER</div>
+<div style="color:#1a2a40;font-size:12px">${inv.notes}</div></div></div>`:""}
+<div style="background:#1a3a6b;padding:12px 36px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1;margin-top:20px">
+<div style="color:rgba(255,255,255,.6);font-size:9.5px">Tommy Aarvik Helstrøm Catering &amp; Import AS · Org.nr 925 415 537</div>
+<div style="color:#c9a84c;font-size:10px">· VI ·</div>
+<div style="color:rgba(255,255,255,.6);font-size:9.5px">Konto: ${settings.bankAccount}</div>
+</div>
+</div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},500);});<\/script>
+</body></html>`;
+}
+function downloadInvoiceFile(inv,settings){
+const html=buildInvoiceHTML(inv,settings);
+try{
+const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+const url=URL.createObjectURL(blob);
+const a=document.createElement("a");
+a.href=url;a.download=`Faktura-${inv.number}.html`;a.rel="noopener";a.style.display="none";
+document.body.appendChild(a);a.click();
+setTimeout(()=>{try{document.body.removeChild(a);URL.revokeObjectURL(url);}catch{}},2000);
+return{ok:true,html};
+}catch(e1){
+try{
+const a=document.createElement("a");
+a.href="data:text/html;charset=utf-8,"+encodeURIComponent(html);
+a.download=`Faktura-${inv.number}.html`;a.style.display="none";
+document.body.appendChild(a);a.click();
+setTimeout(()=>{try{document.body.removeChild(a);}catch{}},2000);
+return{ok:true,html};
+}catch(e2){return{ok:false,html};}
+}
+}
+function openInvoicePrint(inv,settings){
+const w=window.open("","_blank");
+if(!w){return downloadInvoiceFile(inv,settings);}
+w.document.open();w.document.write(buildInvoiceHTML(inv,settings));w.document.close();
+return{ok:true};
+}
+// ── Redigerbar forhåndsvisning ─────────────────────────────────────────────
+function EditablePreview({invoice,settings,invoices,saveInvoices,onClose,isDraft=false,onSaveDraft}){
+const [inv,setInv]=useState(()=>({...invoice,
+timeEntries:(invoice.timeEntries||[]).map(e=>({...e})),
+expenseLines:(invoice.expenseLines||[]).map(e=>({...e})),
+extraLines:(invoice.extraLines||[]).map(e=>({...e})),
+}));
+const [editIdx,setEditIdx]=useState(null);
+const [saving,setSaving]=useState(false),[saved,setSaved]=useState(false);
+const [dlStatus,setDlStatus]=useState(""),[htmlOut,setHtmlOut]=useState("");
+const recalc=u=>{
+const t=(u.timeEntries||[]).reduce((s,e)=>s+(+e.amount||0),0);
+const x=(u.expenseLines||[]).reduce((s,e)=>s+(+e.amount||0),0);
+const y=(u.extraLines||[]).reduce((s,l)=>s+(+l.qty*+l.price),0);
+const sub=+(t+x+y).toFixed(2),vat=+(sub*((settings.vatRate||0)/100)).toFixed(2);
+return{...u,subtotal:sub,vat,totalIncVat:+(sub+vat).toFixed(2)};
+};
+const updT=(idx,k,v)=>setInv(p=>recalc({...p,timeEntries:p.timeEntries.map((e,i)=>{
+if(i!==idx)return e;
+if(k==="desc")return{...e,desc:v};
+if(k==="amount")return{...e,amount:+v};
+if(k==="date")return{...e,date:v,hours:calcH({...e,date:v},settings),amount:calcAmt({...e,date:v},settings)};
+if(k==="start"||k==="end"){const ne={...e,[k]:v};return{...ne,hours:calcH(ne,settings),amount:calcAmt(ne,settings)};}
+if(k==="hours"){
+const nh=+v||0,old=e.hours||{},oldTot=old.total||0,f=oldTot>0?nh/oldTot:0;
+const nH={normal:+((old.normal||0)*f).toFixed(2),evening:+((old.evening||0)*f).toFixed(2),weekend:+((old.weekend||0)*f).toFixed(2),total:nh};
+const r=settings.normalRate||0;
+const amt=+(nH.normal*r+nH.evening*r*(1+(settings.eveningRate||0)/100)+nH.weekend*r*(1+(settings.weekendRate||0)/100)).toFixed(2);
+return{...e,hours:nH,amount:oldTot>0?amt:e.amount};
+}
+return e;
+})}));
+const updExp=(idx,k,v)=>setInv(p=>recalc({...p,expenseLines:p.expenseLines.map((e,i)=>i===idx?{...e,[k]:k==="amount"?+v:v}:e)}));
+const updExtra=(idx,k,v)=>setInv(p=>recalc({...p,extraLines:p.extraLines.map((e,i)=>i===idx?{...e,[k]:["qty","price"].includes(k)?+v:v}:e)}));
+const rmT=i=>{setInv(p=>recalc({...p,timeEntries:p.timeEntries.filter((_,j)=>j!==i)}));setEditIdx(null);};
+const rmExp=i=>{setInv(p=>recalc({...p,expenseLines:p.expenseLines.filter((_,j)=>j!==i)}));setEditIdx(null);};
+const rmEx=i=>{setInv(p=>recalc({...p,extraLines:p.extraLines.filter((_,j)=>j!==i)}));setEditIdx(null);};
+const isEd=(t,i)=>editIdx&&editIdx.t===t&&editIdx.i===i;
+const togEd=(t,i)=>setEditIdx(isEd(t,i)?null:{t,i});
+const addLine=()=>setInv(p=>recalc({...p,extraLines:[...(p.extraLines||[]),{id:uid(),desc:"Ny post",qty:1,unit:"stk",price:0}]}));
+const saveChanges=async()=>{setSaving(true);await saveInvoices(invoices.map(x=>x.id===inv.id?inv:x));setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),2500);};
+const download=()=>{
+setDlStatus("Åpner…");
+const r=openInvoicePrint(inv,settings);
+if(r.ok){setDlStatus("✓ Åpnet i ny fane → Ctrl+P → Lagre som PDF");setTimeout(()=>setDlStatus(""),10000);}
+else{setHtmlOut(r.html);setDlStatus("Blokkert — kopier koden under");}
+};
+const P={hdr:"#1a3a6b",acc:"#c9a84c",light:"#e8f2fc",bdr:"#c5d8ef",txt:"#1a2a40",txtD:"#5a7a9a",wh:"#fff"};
+const ei={...inp,fontSize:11,padding:"4px 6px"};
+const tRows=inv.timeEntries||[],expRows=inv.expenseLines||[],eRows=inv.extraLines||[];
+const rowBg=i=>i%2===0?"rgba(246,249,253,0.55)":"transparent";
+return(
+<div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:300,overflowY:"auto",padding:"20px"}}>
+<div style={{background:C.panel,borderRadius:12,width:"100%",maxWidth:960}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 20px",borderBottom:`1px solid ${C.bdr}`,flexWrap:"wrap",gap:8}}>
+<h3 style={{color:C.white,margin:0,fontSize:14}}>{isDraft?"Foreløpig faktura (utkast)":`Faktura ${inv.number}`} — rediger</h3>
+<div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+{dlStatus&&<span style={{color:dlStatus.startsWith("✓")?C.green:C.warn,fontSize:11}}>{dlStatus}</span>}
+<button onClick={addLine} style={{...Btn("ghost"),fontSize:12,border:`1px solid ${C.bdr}`}}>+ Ny linje</button>
+{isDraft
+?<button onClick={()=>onSaveDraft(inv)} style={{...Btn("pri"),fontSize:12}}>Lagre som faktura</button>
+:<button onClick={saveChanges} style={{...Btn("sec"),fontSize:12}}>{saving?"Lagrer...":(saved?"✓ Lagret!":"Lagre endringer")}</button>}
+<button onClick={download} style={{...Btn(isDraft?"sec":"pri"),fontSize:12}}>Skriv ut / PDF</button>
+<button onClick={onClose} style={{...Btn("ghost"),fontSize:12}}>Lukk</button>
+</div>
+</div>
+{htmlOut&&(
+<div style={{padding:"12px 20px",background:"#071525",borderBottom:`1px solid ${C.bdr}`}}>
+<div style={{color:C.warn,fontSize:11,marginBottom:6}}>Popup blokkert. Klikk i feltet, Ctrl+A, Ctrl+C, lim inn i Notisblokk og lagre som <strong>Faktura-{inv.number}.html</strong>.</div>
+<textarea readOnly value={htmlOut} onClick={e=>e.target.select()} style={{...inp,height:110,fontFamily:"monospace",fontSize:10}}/>
+</div>
+)}
+<div style={{padding:"8px 20px",background:`${C.gold}11`,borderBottom:`1px solid ${C.bdr}`,color:C.gold,fontSize:11}}>
+Trykk <strong>Endre</strong> på en rad for å justere timer, klokkeslett, beløp og tekst. Totalen oppdateres automatisk.
+{isDraft&&" Dette er et utkast — trykk «Lagre som faktura» når du er fornøyd."}
+</div>
+<div style={{background:P.wh,margin:"16px",borderRadius:8,overflow:"hidden",position:"relative"}}>
+<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:0}}>
+<svg viewBox="0 0 200 200" style={{width:520,height:520,opacity:.16}} xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="88" fill="none" stroke="#1a3a6b" strokeWidth="1"/>
+<circle cx="100" cy="100" r="72" fill="none" stroke="#1a3a6b" strokeWidth=".8" strokeDasharray="3,5"/>
+<polygon points="100,22 158,118 42,118" fill="none" stroke="#1a3a6b" strokeWidth="1.5"/>
+<polygon points="100,178 158,82 42,82" fill="none" stroke="#1a3a6b" strokeWidth="1.5"/>
+<polygon points="100,55 135,75 135,115 100,135 65,115 65,75" fill="none" stroke="#c9a84c" strokeWidth="3"/>
+<ellipse cx="100" cy="95" rx="22" ry="14" fill="none" stroke="#c9a84c" strokeWidth="2"/>
+<circle cx="100" cy="95" r="8" fill="#c9a84c"/>
+<rect x="10" y="68" width="9" height="52" fill="none" stroke="#1a3a6b" strokeWidth="1"/>
+<rect x="181" y="68" width="9" height="52" fill="none" stroke="#1a3a6b" strokeWidth="1"/>
+</svg>
+</div>
+<div style={{background:P.light,padding:"26px 36px 18px",borderBottom:`3px solid ${P.acc}`,position:"relative",zIndex:1}}>
+<div style={{textAlign:"center"}}>
+<LogoSVG w={72} h={72} fp={true} noText={true}/>
+<div style={{color:P.hdr,fontFamily:"Georgia,serif",fontSize:14,fontWeight:"bold",letterSpacing:".15em",marginTop:6}}>TOMMY AARVIK HELSTRØM</div>
+<div style={{color:P.acc,fontSize:8.5,letterSpacing:".2em",margin:"3px 0"}}>· CATERING | IMPORT ·</div>
+<div style={{color:P.txtD,fontSize:11,marginTop:4,lineHeight:1.7}}>
+<div>Kai Gata 90, 4280 Skudeneshavn</div><div>Org.nr: 925 415 537</div>
+<div>{settings.email} | {settings.phone}</div>
+</div>
+</div>
+<div style={{position:"absolute",right:36,top:26,textAlign:"right"}}>
+<div style={{color:P.hdr,fontSize:28,fontWeight:800,fontFamily:"Georgia,serif"}}>FAKTURA</div>
+<div style={{color:P.acc,fontSize:14,fontWeight:700,marginTop:4}}>{inv.number}</div>
+<div style={{color:P.txtD,fontSize:11,marginTop:6,lineHeight:1.9}}>
+<div>Fakturadato: <strong style={{color:P.txt}}>{fmtD(inv.date)}</strong></div>
+<div>Forfallsdato: <strong style={{color:P.txt}}>{fmtD(inv.dueDate)}</strong></div>
+</div>
+</div>
+</div>
+<div style={{padding:"16px 36px",display:"flex",justifyContent:"space-between",position:"relative",zIndex:1}}>
+<div>
+<div style={{color:P.txtD,fontSize:8,letterSpacing:".15em",marginBottom:4}}>FAKTURERT TIL</div>
+<div style={{color:P.txt,fontSize:14,fontWeight:700}}>{inv.customerName}</div>
+{inv.customerAddr&&<div style={{color:P.txtD,fontSize:12}}>{inv.customerAddr}</div>}
+{inv.customerOrg&&<div style={{color:P.txtD,fontSize:12}}>Org.nr: {inv.customerOrg}</div>}
+</div>
+<div style={{textAlign:"right"}}>
+<div style={{color:P.txtD,fontSize:8,letterSpacing:".15em",marginBottom:4}}>BANKDETALJER</div>
+<div style={{color:P.txt,fontSize:12}}>Konto: <strong>{settings.bankAccount}</strong></div>
+<div style={{color:P.txtD,fontSize:11,marginTop:2}}>Merk betaling med fakturanr.</div>
+</div>
+</div>
+<div style={{padding:"0 36px 18px",position:"relative",zIndex:1}}>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+<thead><tr style={{background:P.hdr}}>
+{["Beskrivelse","Dato / tid","Timer/Ant.","Enhet","Sats / Pris","Beløp",""].map((h,i)=>(
+<th key={i} style={{padding:"9px 10px",color:"#fff",textAlign:i>=2&&i<6?"right":"left",fontWeight:600,fontSize:11}}>{h}</th>))}
+</tr></thead>
+<tbody>
+{tRows.map((e,i)=>{
+const hh=e.hours||{};const isWE=new Date(e.date).getDay()===0||new Date(e.date).getDay()===6;
+const lbl=isWE?`Helg +${settings.weekendRate}%`:hh.evening>0?`Kveld +${settings.eveningRate}%`:"Normal";
+const ed=isEd("t",i);
+return(<tr key={i} style={{background:rowBg(i),borderBottom:`1px solid ${P.bdr}`}}>
+<td style={{padding:"8px 10px",color:P.txt}}>
+{ed?<input style={ei} value={e.desc||""} onChange={ev=>updT(i,"desc",ev.target.value)}/>
+:<>{e.desc||"Timearbeid"} <span style={{color:P.txtD,fontSize:10}}>({lbl})</span></>}
+</td>
+<td style={{padding:"8px 10px",color:P.txtD,fontSize:11}}>
+{ed?<div style={{display:"flex",flexDirection:"column",gap:3}}>
+<input type="date" style={{...ei,width:120}} value={e.date||""} onChange={ev=>updT(i,"date",ev.target.value)}/>
+<div style={{display:"flex",gap:3}}>
+<input type="time" style={{...ei,width:62,padding:"3px 4px"}} value={e.start||""} onChange={ev=>updT(i,"start",ev.target.value)}/>
+<input type="time" style={{...ei,width:62,padding:"3px 4px"}} value={e.end||""} onChange={ev=>updT(i,"end",ev.target.value)}/>
+</div>
+</div>:fmtD(e.date)}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt}}>
+{ed?<input type="number" step="0.25" style={{...ei,width:60,textAlign:"right"}} value={hh.total||0} onChange={ev=>updT(i,"hours",ev.target.value)}/>:<>{hh.total||0}t</>}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>time</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>kr {fmtM(settings.normalRate)}</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt,fontWeight:600}}>
+{ed?<input type="number" style={{...ei,width:80,textAlign:"right"}} value={e.amount||0} onChange={ev=>updT(i,"amount",ev.target.value)}/>:<>kr {fmtM(e.amount||0)}</>}
+</td>
+<td style={{padding:"8px 8px",whiteSpace:"nowrap"}}>
+<button onClick={()=>togEd("t",i)} style={{...Btn("sec"),padding:"2px 8px",fontSize:10}}>{ed?"✓ OK":"Endre"}</button>
+{ed&&<button onClick={()=>rmT(i)} style={{...Btn("red"),padding:"2px 7px",fontSize:10,marginLeft:3}}>Slett</button>}
+</td>
+</tr>);
+})}
+{expRows.map((e,i)=>{const ed=isEd("exp",i);const ri=tRows.length+i;
+return(<tr key={`exp${i}`} style={{background:rowBg(ri),borderBottom:`1px solid ${P.bdr}`}}>
+<td style={{padding:"8px 10px",color:P.txt}}>
+{ed?<input style={ei} value={e.desc||""} onChange={ev=>updExp(i,"desc",ev.target.value)}/>
+:<>{e.desc} <span style={{color:P.txtD,fontSize:10}}>({e.category})</span></>}
+</td>
+<td style={{padding:"8px 10px",color:P.txtD,fontSize:11}}>
+{ed?<input type="date" style={{...ei,width:120}} value={e.date||""} onChange={ev=>updExp(i,"date",ev.target.value)}/>:fmtD(e.date)}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt}}>1</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>stk</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>
+{ed?<input type="number" style={{...ei,width:80,textAlign:"right"}} value={e.amount||0} onChange={ev=>updExp(i,"amount",ev.target.value)}/>:<>kr {fmtM(e.amount)}</>}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt,fontWeight:600}}>kr {fmtM(e.amount)}</td>
+<td style={{padding:"8px 8px",whiteSpace:"nowrap"}}>
+<button onClick={()=>togEd("exp",i)} style={{...Btn("sec"),padding:"2px 8px",fontSize:10}}>{ed?"✓ OK":"Endre"}</button>
+{ed&&<button onClick={()=>rmExp(i)} style={{...Btn("red"),padding:"2px 7px",fontSize:10,marginLeft:3}}>Slett</button>}
+</td>
+</tr>);
+})}
+{eRows.map((l,i)=>{const ed=isEd("ex",i);const ri=tRows.length+expRows.length+i;
+return(<tr key={`ex${i}`} style={{background:rowBg(ri),borderBottom:`1px solid ${P.bdr}`}}>
+<td style={{padding:"8px 10px",color:P.txt}}>
+{ed?<input style={ei} value={l.desc||""} onChange={ev=>updExtra(i,"desc",ev.target.value)}/>:l.desc}
+</td>
+<td style={{padding:"8px 10px",color:P.txtD}}>—</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt}}>
+{ed?<input type="number" style={{...ei,width:55,textAlign:"right"}} value={l.qty} onChange={ev=>updExtra(i,"qty",ev.target.value)}/>:l.qty}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>
+{ed?<input style={{...ei,width:50}} value={l.unit} onChange={ev=>updExtra(i,"unit",ev.target.value)}/>:l.unit}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txtD}}>
+{ed?<input type="number" style={{...ei,width:80,textAlign:"right"}} value={l.price} onChange={ev=>updExtra(i,"price",ev.target.value)}/>:<>kr {fmtM(l.price)}</>}
+</td>
+<td style={{padding:"8px 10px",textAlign:"right",color:P.txt,fontWeight:600}}>kr {fmtM(l.qty*l.price)}</td>
+<td style={{padding:"8px 8px",whiteSpace:"nowrap"}}>
+<button onClick={()=>togEd("ex",i)} style={{...Btn("sec"),padding:"2px 8px",fontSize:10}}>{ed?"✓ OK":"Endre"}</button>
+{ed&&<button onClick={()=>rmEx(i)} style={{...Btn("red"),padding:"2px 7px",fontSize:10,marginLeft:3}}>Slett</button>}
+</td>
+</tr>);
+})}
+</tbody>
+</table>
+<div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}>
+<div style={{width:290}}>
+{[["Subtotal eks. MVA",inv.subtotal],[`MVA (${settings.vatRate}%)`,inv.vat]].map(([l,v])=>(
+<div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${P.bdr}`,color:P.txtD,fontSize:12}}>
+<span>{l}</span><span style={{color:P.txt}}>kr {fmtM(v)}</span></div>
+))}
+<div style={{display:"flex",justifyContent:"space-between",padding:"10px 12px",background:P.light,marginTop:4,borderRadius:4}}>
+<span style={{color:P.hdr,fontWeight:700,fontSize:13}}>TOTALT Å BETALE</span>
+<span style={{color:P.acc,fontWeight:800,fontSize:15}}>kr {fmtM(inv.totalIncVat)}</span>
+</div>
+</div>
+</div>
+</div>
+{inv.notes&&(<div style={{padding:"0 36px 18px",position:"relative",zIndex:1}}>
+<div style={{background:P.light,padding:"10px 14px",borderRadius:5,borderLeft:`3px solid ${P.acc}`}}>
+<div style={{color:P.txtD,fontSize:8,letterSpacing:".15em",marginBottom:4}}>MERKNADER</div>
+<div style={{color:P.txt,fontSize:12}}>{inv.notes}</div></div></div>)}
+<div style={{background:P.hdr,padding:"12px 36px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:1}}>
+<div style={{color:"rgba(255,255,255,.6)",fontSize:9.5}}>Tommy Aarvik Helstrøm Catering & Import AS · Org.nr 925 415 537</div>
+<div style={{color:P.acc,fontSize:10}}>· VI ·</div>
+<div style={{color:"rgba(255,255,255,.6)",fontSize:9.5}}>Konto: {settings.bankAccount}</div>
+</div>
+</div>
+</div>
+</div>
+);
+}
+function Sidebar({page,setPage,onHub}){
+const nav=[{id:"dashboard",label:"Dashboard"},{id:"time",label:"Timer"},{id:"expenses",label:"Utgifter"},{id:"new-invoice",label:"Ny faktura"},{id:"invoices",label:"Fakturaer"},{id:"settings",label:"Innstillinger"}];
+return(
+<div style={{width:200,background:C.side,borderRight:`1px solid ${C.bdr}`,display:"flex",flexDirection:"column",height:"100vh",flexShrink:0}}>
+<div style={{padding:"22px 14px 14px",borderBottom:`1px solid ${C.bdr}`,textAlign:"center"}}>
+<LogoSVG w={74} h={74} noText={true}/>
+<div style={{color:C.white,fontSize:9,letterSpacing:"0.12em",marginTop:8,fontFamily:"Georgia,serif",lineHeight:1.5}}>TOMMY AARVIK<br/>HELSTRØM</div>
+<div style={{color:C.gold,fontSize:8,letterSpacing:"0.3em",marginTop:4}}>· · ·</div>
+<div style={{color:C.blueL,fontSize:7.5,letterSpacing:"0.18em",marginTop:4}}>CATERING | IMPORT</div>
+</div>
+<nav style={{flex:1,padding:"10px 8px"}}>
+<div onClick={onHub} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",borderRadius:6,marginBottom:8,cursor:"pointer",color:C.gold,fontSize:12,border:`1px solid ${C.bdr}`}}>← Alle programmer</div>
+{nav.map(n=>(
+<div key={n.id} onClick={()=>setPage(n.id)} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",borderRadius:6,marginBottom:2,cursor:"pointer",
+background:page===n.id?`${C.gold}18`:"transparent",color:page===n.id?C.gold:C.textD,
+borderLeft:page===n.id?`3px solid ${C.gold}`:"3px solid transparent",fontSize:13,fontWeight:page===n.id?600:400}}>{n.label}</div>
+))}
+</nav>
+<div style={{padding:"10px 14px",borderTop:`1px solid ${C.bdr}`,color:C.textD,fontSize:9.5,textAlign:"center"}}>
+<div style={{color:C.gold,letterSpacing:"0.15em",marginBottom:3}}>· VI ·</div>Org.nr 925 415 537
+</div>
+</div>
+);
+}
+function Dashboard({invoices,timeEntries,expenses,setPage}){
+const unpaid=invoices.filter(i=>i.status==="ubetalt"),paid=invoices.filter(i=>i.status==="betalt");
+const drafts=invoices.filter(i=>i.status==="utkast");
+const totalExp=(expenses||[]).reduce((s,e)=>s+e.amount,0);
+const SC=({label,value,sub,color=C.gold})=>(
+<div style={{...crd,flex:1,minWidth:130}}>
+<div style={{color:C.textD,fontSize:10,marginBottom:5,textTransform:"uppercase",letterSpacing:".1em"}}>{label}</div>
+<div style={{color,fontSize:18,fontWeight:700}}>{value}</div>
+{sub&&<div style={{color:C.textD,fontSize:10,marginTop:3}}>{sub}</div>}
+</div>
+);
+return(
+<div style={{padding:"24px 28px"}}>
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:"0 0 6px"}}>Dashboard</h1>
+<div style={{color:C.textD,fontSize:11,marginBottom:20}}>{new Date().toLocaleDateString("nb-NO",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+<div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:24}}>
+<SC label="Utestående" value={`kr ${fmtM(unpaid.reduce((s,i)=>s+(i.totalIncVat||0),0))}`} sub={`${unpaid.length} faktura(er)`} color={C.warn}/>
+<SC label="Betalt totalt" value={`kr ${fmtM(paid.reduce((s,i)=>s+(i.totalIncVat||0),0))}`} sub={`${paid.length} stk`} color={C.green}/>
+<SC label="Utkast" value={drafts.length} sub="ikke sendt" color={C.blueL}/>
+<SC label="Totale utgifter" value={`kr ${fmtM(totalExp)}`} sub={`${(expenses||[]).length} poster`} color={C.red}/>
+</div>
+<div style={crd}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<h2 style={{color:C.white,fontSize:14,margin:0}}>Siste fakturaer</h2>
+<button onClick={()=>setPage("invoices")} style={{...Btn("ghost"),color:C.gold,fontSize:12}}>Se alle →</button>
+</div>
+{invoices.length===0?(<div style={{color:C.textD,textAlign:"center",padding:"18px 0",fontSize:13}}>Ingen fakturaer ennå</div>):
+invoices.slice(-5).reverse().map(inv=>(
+<div key={inv.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${C.bdr}20`}}>
+<div><span style={{color:C.gold,fontSize:12,fontWeight:600}}>{inv.number}</span><span style={{color:C.textD,fontSize:12,marginLeft:10}}>{inv.customerName}</span></div>
+<div style={{display:"flex",gap:14,alignItems:"center"}}>
+<span style={{color:C.white,fontSize:13,fontWeight:600}}>kr {fmtM(inv.totalIncVat||0)}</span>
+<span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:inv.status==="betalt"?`${C.green}22`:inv.status==="utkast"?`${C.blueL}22`:`${C.warn}22`,color:inv.status==="betalt"?C.green:inv.status==="utkast"?C.blueL:C.warn,fontWeight:600}}>{inv.status}</span>
+</div>
+</div>
+))}
+</div>
+<div style={{display:"flex",gap:10}}>
+<button onClick={()=>setPage("time")} style={Btn("sec")}>Logg timer</button>
+<button onClick={()=>setPage("new-invoice")} style={Btn("pri")}>+ Ny faktura</button>
+</div>
+</div>
+);
+}
+function TimeTracking({timeEntries,saveTimeEntries,settings}){
+const today=new Date().toISOString().split("T")[0];
+const [form,setForm]=useState({date:today,start:"07:00",end:"19:00",desc:""});
+const fld=(k,v)=>setForm(f=>({...f,[k]:v}));
+const h=form.start&&form.end?calcH(form,settings):null,amt=h?calcAmt(form,settings):0;
+const submit=async()=>{if(!form.date||!form.start||!form.end)return;await saveTimeEntries([...timeEntries,{...form,id:uid()}]);setForm({date:today,start:"07:00",end:"19:00",desc:""});};
+const del=async id=>await saveTimeEntries(timeEntries.filter(e=>e.id!==id));
+return(
+<div style={{padding:"24px 28px"}}>
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:"0 0 18px"}}>Timeregistrering</h1>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 12px",letterSpacing:".1em"}}>LEGG TIL OPPFØRING</h3>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 2fr",gap:10,marginBottom:10}}>
+{[["date","Dato","date"],["start","Start","time"],["end","Slutt","time"]].map(([k,l,t])=>(
+<div key={k}><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>{l}</label>
+<input type={t} style={inp} value={form[k]} onChange={e=>fld(k,e.target.value)}/></div>))}
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>BESKRIVELSE</label>
+<input style={inp} value={form.desc} onChange={e=>fld("desc",e.target.value)} placeholder="Arbeidsbeskrivelse..."/></div>
+</div>
+{h&&(<div style={{display:"flex",gap:12,marginBottom:10,padding:"8px 12px",background:"#071525",borderRadius:6,fontSize:12,flexWrap:"wrap"}}>
+{h.normal>0&&<span style={{color:C.textD}}>Normal: <strong style={{color:C.text}}>{h.normal}t</strong></span>}
+{h.evening>0&&<span style={{color:C.textD}}>Kveld (+{settings.eveningRate}%): <strong style={{color:C.gold}}>{h.evening}t</strong></span>}
+{h.weekend>0&&<span style={{color:C.textD}}>Helg (+{settings.weekendRate}%): <strong style={{color:C.warn}}>{h.weekend}t</strong></span>}
+<span style={{marginLeft:"auto",color:C.white,fontWeight:600}}>~ kr {fmtM(amt)}</span>
+</div>)}
+<button onClick={submit} style={Btn("pri")}>+ Legg til</button>
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 12px",letterSpacing:".1em"}}>LOGGEDE TIMER ({timeEntries.length})</h3>
+{timeEntries.length===0?(<div style={{color:C.textD,textAlign:"center",padding:"14px 0",fontSize:13}}>Ingen timer registrert ennå</div>):(
+<div style={{overflowX:"auto"}}>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+<thead><tr>{["Dato","Start","Slutt","Timer","Type","Beskrivelse","Beløp",""].map((h,i)=>(<th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.bdr}`,fontWeight:600,textAlign:"left",color:C.textD}}>{h}</th>))}</tr></thead>
+<tbody>
+{[...timeEntries].reverse().map(e=>{const hh=calcH(e,settings),a=calcAmt(e,settings);const isWE=new Date(e.date).getDay()===0||new Date(e.date).getDay()===6;
+return(<tr key={e.id} style={{borderBottom:`1px solid ${C.bdr}20`}}>
+<td style={{padding:"7px 8px",color:C.text}}>{fmtD(e.date)}</td>
+<td style={{padding:"7px 8px",color:C.textD}}>{e.start}</td>
+<td style={{padding:"7px 8px",color:C.textD}}>{e.end}</td>
+<td style={{padding:"7px 8px",color:C.white,fontWeight:600}}>{hh.total}t</td>
+<td style={{padding:"7px 8px"}}><span style={{fontSize:10,padding:"2px 7px",borderRadius:8,background:isWE?`${C.warn}22`:hh.evening>0?`${C.gold}22`:`${C.blueL}22`,color:isWE?C.warn:hh.evening>0?C.gold:C.blueL}}>{isWE?"Helg":hh.evening>0?"Kveld":"Normal"}</span></td>
+<td style={{padding:"7px 8px",color:C.textD,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.desc||"—"}</td>
+<td style={{padding:"7px 8px",color:C.white,fontWeight:600}}>kr {fmtM(a)}</td>
+<td style={{padding:"7px 8px"}}><button onClick={()=>del(e.id)} style={{...Btn("red"),padding:"3px 8px",fontSize:11}}>Slett</button></td>
+</tr>);})}
+</tbody>
+</table>
+</div>
+)}
+</div>
+</div>
+);
+}
+function ExpensesPage({expenses,saveExpenses}){
+const today=new Date().toISOString().split("T")[0];
+const [form,setForm]=useState({date:today,category:"Andre utgifter",desc:"",amount:"",vatIncluded:false});
+const [showCalc,setShowCalc]=useState(false),[fpBase,setFpBase]=useState("");
+const fld=(k,v)=>setForm(f=>({...f,[k]:v}));
+const fpAmount=+((+fpBase||0)*0.122).toFixed(2);
+const addFP=async()=>{if(!+fpBase)return;await saveExpenses([...expenses,{id:uid(),date:form.date,category:"Feriepenger",desc:`Feriepenger (12,2%) av opptjente midler kr ${fmtM(+fpBase)}`,amount:fpAmount,vatIncluded:false}]);setShowCalc(false);setFpBase("");};
+const submit=async()=>{if(!+form.amount||!form.desc)return;await saveExpenses([...expenses,{...form,id:uid(),amount:+form.amount}]);setForm({date:today,category:"Andre utgifter",desc:"",amount:"",vatIncluded:false});};
+const del=async id=>await saveExpenses(expenses.filter(e=>e.id!==id));
+const byCat={};expenses.forEach(e=>{byCat[e.category]=(byCat[e.category]||0)+e.amount;});
+const grand=expenses.reduce((s,e)=>s+e.amount,0);
+const cc=c=>c==="Feriepenger"?C.gold:c==="Reise"?C.blueL:c.startsWith("Mat")?C.green:C.textD;
+return(
+<div style={{padding:"24px 28px"}}>
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:"0 0 6px"}}>Utgifter</h1>
+<div style={{color:C.textD,fontSize:11,marginBottom:20}}>Logg utgifter, feriepenger og kostnader</div>
+<div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
+<div style={{...crd,flex:1,minWidth:140}}><div style={{color:C.textD,fontSize:10,marginBottom:5}}>TOTALE UTGIFTER</div><div style={{color:C.red,fontSize:20,fontWeight:700}}>kr {fmtM(grand)}</div><div style={{color:C.textD,fontSize:10,marginTop:3}}>{expenses.length} poster</div></div>
+{Object.entries(byCat).map(([cat,tot])=>(<div key={cat} style={{...crd,flex:1,minWidth:140}}><div style={{color:C.textD,fontSize:10,marginBottom:5}}>{cat.toUpperCase()}</div><div style={{color:cc(cat),fontSize:16,fontWeight:700}}>kr {fmtM(tot)}</div></div>))}
+</div>
+<div style={{...crd,borderLeft:`3px solid ${C.gold}`}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div><h3 style={{color:C.gold,fontSize:12,margin:"0 0 3px",letterSpacing:".1em"}}>FERIEPENGER-KALKULATOR</h3>
+<div style={{color:C.textD,fontSize:11}}>Sats: 12,2% av opptjente midler</div></div>
+<button onClick={()=>setShowCalc(!showCalc)} style={{...Btn("sec"),fontSize:12}}>{showCalc?"Skjul":"Beregn"}</button>
+</div>
+{showCalc&&(<div style={{marginTop:14,display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+<div style={{flex:1,minWidth:200}}><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>OPPTJENTE MIDLER (KR)</label>
+<input style={inp} inputMode="decimal" value={fpBase} onChange={e=>{const v=e.target.value;if(v===""||/^\d*[.,]?\d*$/.test(v))setFpBase(v.replace(",","."));}} placeholder="F.eks. 45000"/></div>
+<div style={{padding:"7px 14px",background:"#071525",borderRadius:6,fontSize:13,color:C.white,fontWeight:600,whiteSpace:"nowrap"}}>= kr {fmtM(fpAmount)}</div>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>DATO</label><input type="date" style={{...inp,width:150}} value={form.date} onChange={e=>fld("date",e.target.value)}/></div>
+<button onClick={addFP} style={Btn("pri")}>Legg til</button>
+</div>)}
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 12px",letterSpacing:".1em"}}>LEGG TIL UTGIFT</h3>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 2fr 1fr auto",gap:10,marginBottom:10,alignItems:"end"}}>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>DATO</label><input type="date" style={inp} value={form.date} onChange={e=>fld("date",e.target.value)}/></div>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>KATEGORI</label><select style={inp} value={form.category} onChange={e=>fld("category",e.target.value)}>{EXPENSE_CATS.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>BESKRIVELSE</label><input style={inp} value={form.desc} onChange={e=>fld("desc",e.target.value)} placeholder="Hva gjelder utgiften?"/></div>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>BELØP (KR)</label>
+<input style={inp} inputMode="decimal" value={form.amount} onChange={e=>{const v=e.target.value;if(v===""||/^\d*[.,]?\d*$/.test(v))fld("amount",v.replace(",","."));}} placeholder="0"/></div>
+<button onClick={submit} style={{...Btn("pri"),whiteSpace:"nowrap"}}>+ Legg til</button>
+</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}><input type="checkbox" checked={form.vatIncluded} onChange={e=>fld("vatIncluded",e.target.checked)}/><span style={{color:C.textD,fontSize:12}}>Beløpet inkluderer MVA</span></div>
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 12px",letterSpacing:".1em"}}>UTGIFTSOVERSIKT ({expenses.length})</h3>
+{expenses.length===0?(<div style={{color:C.textD,textAlign:"center",padding:"18px 0",fontSize:13}}>Ingen utgifter registrert ennå</div>):(
+<div style={{overflowX:"auto"}}>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+<thead><tr>{["Dato","Kategori","Beskrivelse","MVA inkl.","Beløp",""].map((h,i)=>(<th key={i} style={{padding:"6px 8px",borderBottom:`1px solid ${C.bdr}`,fontWeight:600,textAlign:"left",color:C.textD}}>{h}</th>))}</tr></thead>
+<tbody>
+{[...expenses].reverse().map(e=>(<tr key={e.id} style={{borderBottom:`1px solid ${C.bdr}20`}}>
+<td style={{padding:"7px 8px",color:C.textD}}>{fmtD(e.date)}</td>
+<td style={{padding:"7px 8px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:8,background:`${cc(e.category)}22`,color:cc(e.category),fontWeight:600}}>{e.category}</span></td>
+<td style={{padding:"7px 8px",color:C.text}}>{e.desc}</td>
+<td style={{padding:"7px 8px",color:e.vatIncluded?C.green:C.textD,fontSize:11}}>{e.vatIncluded?"Ja":"Nei"}</td>
+<td style={{padding:"7px 8px",color:C.white,fontWeight:700}}>kr {fmtM(e.amount)}</td>
+<td style={{padding:"7px 8px"}}><button onClick={()=>del(e.id)} style={{...Btn("red"),padding:"3px 8px",fontSize:11}}>Slett</button></td>
+</tr>))}
+</tbody>
+</table>
+<div style={{textAlign:"right",marginTop:10,padding:"8px 12px",background:"#071525",borderRadius:6}}>
+<span style={{color:C.textD,fontSize:12}}>Sum: </span><span style={{color:C.red,fontWeight:700,fontSize:15}}>kr {fmtM(grand)}</span></div>
+</div>
+)}
+</div>
+</div>
+);
+}
+function InvoiceBuilder({invoices,timeEntries,customers,expenses,settings,saveInvoices,saveSettings,setPage,setPrintInvoice}){
+const [cName,setCName]=useState(""),[cAddr,setCAddr]=useState(""),[cOrg,setCOrg]=useState("");
+const [selT,setSelT]=useState([]),[selExp,setSelExp]=useState([]),[extraLines,setExtras]=useState([]);
+const [dueDate,setDueDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+14);return d.toISOString().split("T")[0];});
+const [status,setStatus]=useState("ubetalt"),[notes,setNotes]=useState(""),[showDD,setShowDD]=useState(false);
+const [fpManual,setFpManual]=useState(""),[flash,setFlash]=useState(""),[draft,setDraft]=useState(null);
+const togT=id=>setSelT(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+const togExp=id=>setSelExp(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+const addExtra=()=>setExtras(l=>[...l,{id:uid(),desc:"",qty:1,unit:"stk",price:0}]);
+const updE=(id,k,v)=>setExtras(l=>l.map(x=>x.id===id?{...x,[k]:v}:x));
+const delE=id=>setExtras(l=>l.filter(x=>x.id!==id));
+const tTot=selT.reduce((s,id)=>{const e=timeEntries.find(t=>t.id===id);return s+(e?calcAmt(e,settings):0);},0);
+const expTot=selExp.reduce((s,id)=>{const e=(expenses||[]).find(x=>x.id===id);return s+(e?e.amount:0);},0);
+const eTot=extraLines.reduce((s,l)=>s+(l.qty*l.price),0);
+const sub=+(tTot+expTot+eTot).toFixed(2),vat=+(sub*(settings.vatRate/100)).toFixed(2),total=+(sub+vat).toFixed(2);
+const fpBase=+(tTot+extraLines.filter(l=>!l.isFeriepenger).reduce((s,l)=>s+(l.qty*l.price),0)).toFixed(2);
+const fpCalc=+(fpBase*0.122).toFixed(2);
+const addFPauto=()=>{
+if(fpBase<=0){alert("Legg inn timer med sats eller en tilleggspost med beløp først.");return;}
+setExtras(l=>[...l.filter(x=>!x.isFeriepenger),{id:uid(),desc:`Feriepenger (12,2%) av opptjente midler kr ${fmtM(fpBase)}`,qty:1,unit:"stk",price:fpCalc,isFeriepenger:true}]);
+};
+const fpManualCalc=+((+fpManual||0)*0.122).toFixed(2);
+const addFPmanual=()=>{
+const b=+fpManual||0;
+if(b<=0){alert("Skriv inn en sum å beregne feriepenger av.");return;}
+setExtras(l=>[...l,{id:uid(),desc:`Feriepenger (12,2%) av opptjente midler kr ${fmtM(b)}`,qty:1,unit:"stk",price:fpManualCalc}]);
+setFpManual("");
+};
+const resetForm=()=>{
+setCName("");setCAddr("");setCOrg("");setSelT([]);setSelExp([]);setExtras([]);
+setNotes("");setStatus("ubetalt");setFpManual("");
+const d=new Date();d.setDate(d.getDate()+14);setDueDate(d.toISOString().split("T")[0]);
+};
+const buildInv=(st)=>{
+const num=`${settings.invoicePrefix||"TAH"}-${settings.nextNum||1000}`;
+const teSnaps=selT.map(id=>{const e=timeEntries.find(t=>t.id===id);if(!e)return null;return{...e,hours:calcH(e,settings),amount:calcAmt(e,settings)};}).filter(Boolean);
+const expSnaps=selExp.map(id=>(expenses||[]).find(x=>x.id===id)).filter(Boolean);
+return{id:uid(),number:num,date:new Date().toISOString().split("T")[0],dueDate,status:st,notes,
+customerName:cName,customerAddr:cAddr,customerOrg:cOrg,timeEntries:teSnaps,expenseLines:expSnaps,
+extraLines,subtotal:sub,vat,totalIncVat:total};
+};
+const doSave=async(keepOpen,asDraft)=>{
+if(!cName){alert("Velg eller skriv inn kundenavn");return;}
+const inv=buildInv(asDraft?"utkast":status);
+await saveInvoices([...invoices,inv]);
+await saveSettings({...settings,nextNum:(settings.nextNum||1000)+1});
+if(keepOpen){resetForm();setFlash(`✓ ${inv.number} lagret${asDraft?" som utkast":""}. Klar for neste faktura.`);setTimeout(()=>setFlash(""),5000);}
+else{setPrintInvoice(inv);setPage("invoices");}
+};
+const showDraft=()=>{
+if(!cName){alert("Velg eller skriv inn kundenavn");return;}
+setDraft({...buildInv(status),id:"draft",isDraft:true});
+};
+const saveFromDraft=async(edited)=>{
+const inv={...edited,id:uid(),isDraft:false};
+await saveInvoices([...invoices,inv]);
+await saveSettings({...settings,nextNum:(settings.nextNum||1000)+1});
+setDraft(null);setPrintInvoice(inv);setPage("invoices");
+};
+const selCust=c=>{setCName(c.name);setCAddr(c.address||"");setCOrg(c.orgNr||"");setShowDD(false);};
+return(
+<div style={{padding:"24px 28px"}}>
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:"0 0 18px"}}>Ny faktura</h1>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 11px",letterSpacing:".1em"}}>KUNDEINFO</h3>
+<div style={{position:"relative",marginBottom:7}}>
+<input style={inp} value={cName} onChange={e=>{setCName(e.target.value);setShowDD(true);}} placeholder="Kundenavn..."/>
+{showDD&&customers.filter(c=>c.name.toLowerCase().includes(cName.toLowerCase())).length>0&&(
+<div style={{position:"absolute",top:"100%",left:0,right:0,background:C.panel,border:`1px solid ${C.bdr}`,borderRadius:5,zIndex:10}}>
+{customers.filter(c=>c.name.toLowerCase().includes(cName.toLowerCase())).map(c=>(
+<div key={c.id} onClick={()=>selCust(c)} style={{padding:"8px 10px",cursor:"pointer",color:C.text,fontSize:13,borderBottom:`1px solid ${C.bdr}20`}}>{c.name} <span style={{color:C.textD,fontSize:11}}>{c.orgNr}</span></div>))}
+</div>)}
+</div>
+<input style={{...inp,marginBottom:7}} value={cAddr} onChange={e=>setCAddr(e.target.value)} placeholder="Adresse..."/>
+<input style={inp} value={cOrg} onChange={e=>setCOrg(e.target.value)} placeholder="Org.nr..."/>
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 11px",letterSpacing:".1em"}}>FAKTURAINFO</h3>
+<div style={{marginBottom:8}}><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>FAKTURANUMMER</label><div style={{...inp,background:"#040d1a",color:C.textD}}>{settings.invoicePrefix||"TAH"}-{settings.nextNum||1000}</div></div>
+<div style={{marginBottom:8}}><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>FORFALLSDATO</label><input type="date" style={inp} value={dueDate} onChange={e=>setDueDate(e.target.value)}/></div>
+<div><label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3}}>STATUS</label>
+<select style={inp} value={status} onChange={e=>setStatus(e.target.value)}><option value="ubetalt">Ubetalt</option><option value="betalt">Betalt</option><option value="utkast">Utkast</option></select></div>
+</div>
+</div>
+{(expenses||[]).length>0&&(
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 11px",letterSpacing:".1em"}}>VELG UTGIFTER ({selExp.length} valgt)</h3>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
+{(expenses||[]).map(e=>{const sel=selExp.includes(e.id);return(
+<div key={e.id} onClick={()=>togExp(e.id)} style={{padding:"9px 12px",borderRadius:6,cursor:"pointer",border:`1px solid ${sel?C.gold:C.bdr}`,background:sel?`${C.gold}10`:"#071525"}}>
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{color:sel?C.gold:C.text,fontSize:12,fontWeight:600}}>{e.category}</span><span style={{color:C.white,fontSize:12,fontWeight:700}}>kr {fmtM(e.amount)}</span></div>
+<div style={{color:C.textD,fontSize:11}}>{fmtD(e.date)} · {e.desc}</div>
+</div>);})}
+</div>
+</div>)}
+{timeEntries.length>0&&(
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 11px",letterSpacing:".1em"}}>VELG TIMER ({selT.length} valgt)</h3>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
+{timeEntries.map(e=>{const hh=calcH(e,settings),a=calcAmt(e,settings),sel=selT.includes(e.id);return(
+<div key={e.id} onClick={()=>togT(e.id)} style={{padding:"9px 12px",borderRadius:6,cursor:"pointer",border:`1px solid ${sel?C.gold:C.bdr}`,background:sel?`${C.gold}10`:"#071525"}}>
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{color:sel?C.gold:C.text,fontSize:12,fontWeight:600}}>{fmtD(e.date)}</span><span style={{color:C.white,fontSize:12,fontWeight:700}}>kr {fmtM(a)}</span></div>
+<div style={{color:C.textD,fontSize:11}}>{e.start}–{e.end} · {hh.total}t · {e.desc||"Ingen beskrivelse"}</div>
+</div>);})}
+</div>
+</div>)}
+<div style={crd}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+<h3 style={{color:C.gold,fontSize:12,margin:0,letterSpacing:".1em"}}>TILLEGGSPOSTER</h3>
+<div style={{display:"flex",gap:8}}>
+<button onClick={addFPauto} style={{...Btn("pri"),fontSize:12,padding:"5px 12px"}}>+ Feriepenger 12,2% (kr {fmtM(fpCalc)})</button>
+<button onClick={addExtra} style={{...Btn("sec"),fontSize:12,padding:"5px 12px"}}>+ Legg til</button>
+</div>
+</div>
+{extraLines.map(l=>(
+<div key={l.id} style={{display:"grid",gridTemplateColumns:"3fr 1fr 1fr 1fr auto",gap:8,marginBottom:6}}>
+<input style={inp} value={l.desc} onChange={e=>updE(l.id,"desc",e.target.value)} placeholder="Beskrivelse..."/>
+<input type="number" style={inp} value={l.qty} onChange={e=>updE(l.id,"qty",+e.target.value)}/>
+<input style={inp} value={l.unit} onChange={e=>updE(l.id,"unit",e.target.value)}/>
+<input type="number" style={inp} value={l.price} onChange={e=>updE(l.id,"price",+e.target.value)} placeholder="Pris"/>
+<button onClick={()=>delE(l.id)} style={{...Btn("red"),padding:"7px 10px"}}>X</button>
+</div>))}
+{extraLines.length===0&&<div style={{color:C.textD,fontSize:12,textAlign:"center",padding:"8px 0"}}>Ingen tilleggsposter ennå</div>}
+<div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.bdr}`,display:"flex",gap:10,alignItems:"end",flexWrap:"wrap"}}>
+<div style={{flex:1,minWidth:180}}>
+<label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3,letterSpacing:".08em"}}>FERIEPENGER AV EGEN SUM (KR)</label>
+<input style={inp} inputMode="decimal" value={fpManual} onChange={e=>{const v=e.target.value;if(v===""||/^\d*[.,]?\d*$/.test(v))setFpManual(v.replace(",","."));}} placeholder="Grunnlag, f.eks. 45000"/>
+</div>
+<div style={{padding:"7px 14px",background:"#071525",borderRadius:6,fontSize:13,color:C.white,fontWeight:600,whiteSpace:"nowrap"}}>= kr {fmtM(fpManualCalc)}</div>
+<button onClick={addFPmanual} style={{...Btn("pri"),whiteSpace:"nowrap"}}>+ Legg til feriepenger</button>
+</div>
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 8px",letterSpacing:".1em"}}>MERKNADER</h3>
+<textarea style={{...inp,height:56,resize:"vertical"}} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Merknader til fakturaen..."/>
+</div>
+<div style={{...crd,background:"#071a30"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",flexWrap:"wrap",gap:12}}>
+<div>
+<div style={{color:C.textD,fontSize:12,marginBottom:3}}>Subtotal: <span style={{color:C.text}}>kr {fmtM(sub)}</span></div>
+<div style={{color:C.textD,fontSize:12,marginBottom:7}}>MVA ({settings.vatRate}%): <span style={{color:C.text}}>kr {fmtM(vat)}</span></div>
+<div style={{color:C.white,fontSize:19,fontWeight:700}}>Totalt inkl. MVA: <span style={{color:C.gold}}>kr {fmtM(total)}</span></div>
+</div>
+<div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+<button onClick={()=>setPage("invoices")} style={Btn("ghost")}>Avbryt</button>
+<button onClick={showDraft} style={Btn("sec")}>Vis faktura</button>
+<button onClick={()=>doSave(true,true)} style={Btn("sec")}>Lagre utkast + ny</button>
+<button onClick={()=>doSave(true,false)} style={Btn("sec")}>Lagre + lag ny</button>
+<button onClick={()=>doSave(false,false)} style={Btn("pri")}>Lagre og åpne</button>
+</div>
+</div>
+{flash&&<div style={{color:C.green,fontSize:12,marginTop:10,textAlign:"right"}}>{flash}</div>}
+</div>
+{draft&&<EditablePreview invoice={draft} settings={settings} invoices={invoices} saveInvoices={saveInvoices} isDraft={true} onSaveDraft={saveFromDraft} onClose={()=>setDraft(null)}/>}
+</div>
+);
+}
+function InvoiceList({invoices,saveInvoices,settings,setPrintInvoice,setPage}){
+const [filter,setFilter]=useState("alle"),[confirmDel,setConfirmDel]=useState(null);
+const [sel,setSel]=useState([]),[batchMsg,setBatchMsg]=useState("");
+const filtered=filter==="alle"?invoices:invoices.filter(i=>i.status===filter);
+const del=async id=>{await saveInvoices(invoices.filter(i=>i.id!==id));setConfirmDel(null);setSel(s=>s.filter(x=>x!==id));};
+const delSel=async()=>{await saveInvoices(invoices.filter(i=>!sel.includes(i.id)));setSel([]);setConfirmDel(null);};
+const cycleStatus=async id=>await saveInvoices(invoices.map(i=>{
+if(i.id!==id)return i;
+const nx=i.status==="utkast"?"ubetalt":i.status==="ubetalt"?"betalt":"utkast";
+return{...i,status:nx};
+}));
+const togSel=id=>setSel(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+const allSel=filtered.length>0&&filtered.every(i=>sel.includes(i.id));
+const togAll=()=>setSel(allSel?[]:filtered.map(i=>i.id));
+const dlSel=()=>{
+const list=invoices.filter(i=>sel.includes(i.id));
+if(!list.length)return;
+setBatchMsg(`Laster ned ${list.length} faktura(er)...`);
+list.forEach((inv,idx)=>setTimeout(()=>{
+downloadInvoiceFile(inv,settings);
+if(idx===list.length-1){setBatchMsg(`✓ ${list.length} faktura(er) nedlastet. Åpne i Chrome → Ctrl+P → Lagre som PDF`);setTimeout(()=>setBatchMsg(""),10000);}
+},idx*800));
+};
+const selTotal=invoices.filter(i=>sel.includes(i.id)).reduce((s,i)=>s+(i.totalIncVat||0),0);
+const sc=s=>s==="betalt"?C.green:s==="utkast"?C.blueL:C.warn;
+return(
+<div style={{padding:"24px 28px"}}>
+{confirmDel&&(<div style={{position:"fixed",inset:0,background:"#000000bb",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+<div style={{...crd,width:360,textAlign:"center"}}>
+<h3 style={{color:C.white,margin:"0 0 8px"}}>{confirmDel==="batch"?`Slett ${sel.length} fakturaer?`:"Slett faktura?"}</h3>
+<p style={{color:C.textD,fontSize:13,margin:"0 0 16px"}}>Dette kan ikke angres.</p>
+<div style={{display:"flex",gap:10,justifyContent:"center"}}>
+<button onClick={()=>setConfirmDel(null)} style={Btn("ghost")}>Avbryt</button>
+<button onClick={()=>confirmDel==="batch"?delSel():del(confirmDel)} style={Btn("red")}>Slett permanent</button>
+</div>
+</div>
+</div>)}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:0}}>Fakturaer</h1>
+<div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+{["alle","ubetalt","betalt","utkast"].map(f=>(
+<button key={f} onClick={()=>setFilter(f)} style={{fontSize:11,padding:"4px 12px",background:filter===f?`${C.gold}20`:"transparent",color:filter===f?C.gold:C.textD,border:`1px solid ${filter===f?C.gold:C.bdr}`,borderRadius:14,cursor:"pointer",textTransform:"capitalize"}}>{f}</button>))}
+<button onClick={()=>setPage("new-invoice")} style={{...Btn("pri"),fontSize:12,padding:"5px 14px",marginLeft:6}}>+ Ny faktura</button>
+</div>
+</div>
+{sel.length>0&&(
+<div style={{...crd,padding:"12px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,borderLeft:`3px solid ${C.gold}`}}>
+<div style={{color:C.text,fontSize:13}}><strong style={{color:C.gold}}>{sel.length}</strong> valgt · Sum: <strong style={{color:C.white}}>kr {fmtM(selTotal)}</strong></div>
+<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+<button onClick={()=>setSel([])} style={{...Btn("ghost"),fontSize:12}}>Fjern utvalg</button>
+<button onClick={()=>setConfirmDel("batch")} style={{...Btn("red"),fontSize:12}}>Slett valgte</button>
+<button onClick={dlSel} style={{...Btn("pri"),fontSize:12}}>Last ned valgte</button>
+</div>
+</div>)}
+{batchMsg&&<div style={{color:batchMsg.startsWith("✓")?C.green:C.warn,fontSize:12,marginBottom:12}}>{batchMsg}</div>}
+{filtered.length===0?(<div style={{...crd,textAlign:"center",padding:"36px 0",color:C.textD}}>Ingen fakturaer funnet</div>):(
+<div style={crd}><div style={{overflowX:"auto"}}>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+<thead><tr>
+<th style={{padding:"7px 10px",borderBottom:`1px solid ${C.bdr}`,width:30}}><input type="checkbox" checked={allSel} onChange={togAll} style={{cursor:"pointer"}}/></th>
+{["Nr.","Dato","Forfaller","Kunde","Beløp inkl. MVA","Status",""].map((h,i)=>(<th key={i} style={{padding:"7px 10px",borderBottom:`1px solid ${C.bdr}`,textAlign:"left",fontWeight:600,fontSize:11,color:C.textD}}>{h}</th>))}
+</tr></thead>
+<tbody>
+{[...filtered].reverse().map(inv=>(
+<tr key={inv.id} style={{borderBottom:`1px solid ${C.bdr}20`,background:sel.includes(inv.id)?`${C.gold}10`:"transparent"}}>
+<td style={{padding:"9px 10px"}}><input type="checkbox" checked={sel.includes(inv.id)} onChange={()=>togSel(inv.id)} style={{cursor:"pointer"}}/></td>
+<td style={{padding:"9px 10px",color:C.gold,fontWeight:600}}>{inv.number}</td>
+<td style={{padding:"9px 10px",color:C.textD}}>{fmtD(inv.date)}</td>
+<td style={{padding:"9px 10px",color:C.textD}}>{fmtD(inv.dueDate)}</td>
+<td style={{padding:"9px 10px",color:C.text}}>{inv.customerName}</td>
+<td style={{padding:"9px 10px",color:C.white,fontWeight:700}}>kr {fmtM(inv.totalIncVat||0)}</td>
+<td style={{padding:"9px 10px"}}><span onClick={()=>cycleStatus(inv.id)} title="Klikk for å endre" style={{fontSize:10,padding:"2px 9px",borderRadius:10,cursor:"pointer",background:`${sc(inv.status)}22`,color:sc(inv.status),fontWeight:600}}>{inv.status}</span></td>
+<td style={{padding:"9px 10px"}}><div style={{display:"flex",gap:5}}>
+<button onClick={()=>setPrintInvoice(inv)} style={{...Btn("sec"),fontSize:11,padding:"4px 10px"}}>Åpne</button>
+<button onClick={()=>openInvoicePrint(inv,settings)} style={{...Btn("ghost"),fontSize:11,padding:"4px 8px",border:`1px solid ${C.bdr}`}}>PDF</button>
+<button onClick={()=>setConfirmDel(inv.id)} style={{...Btn("red"),fontSize:11,padding:"4px 8px"}}>Slett</button>
+</div></td>
+</tr>))}
+</tbody>
+</table>
+</div></div>)}
+</div>
+);
+}
+function SettingsPage({settings,saveSettings,customers,saveCustomers,timeEntries,saveTimeEntries,expenses,saveExpenses,invoices,saveInvoices}){
+const [s,setS]=useState(settings),[saved,setSaved]=useState(false),[err,setErr]=useState("");
+const [nc,setNc]=useState({name:"",address:"",orgNr:"",email:"",phone:""});
+const [confirmDelC,setConfirmDelC]=useState(null),[seedMsg,setSeedMsg]=useState("");
+const upd=(k,v)=>setS(p=>({...p,[k]:v}));
+const saveSett=async()=>{try{
+const clean={...s};
+["normalRate","eveningStart","eveningRate","weekendStart","weekendRate","vatRate","nextNum"].forEach(k=>{clean[k]=+String(clean[k]??0).replace(",",".")||0;});
+setS(clean);await saveSettings(clean);setSaved(true);setErr("");setTimeout(()=>setSaved(false),2500);
+}catch(e){setErr("Feil: "+e.message);}};
+const loadSeed=async()=>{
+const ns={...settings,...SEED.settings,nextNum:1001};
+setS(ns);await saveSettings(ns);
+await saveCustomers([...customers.filter(c=>c.orgNr!==SEED.customer.orgNr),{...SEED.customer,id:uid()}]);
+const nt=SEED.time.map(t=>({...t,id:uid()})),ne=SEED.expenses.map(e=>({...e,id:uid()}));
+await saveTimeEntries([...timeEntries,...nt]);await saveExpenses([...expenses,...ne]);
+const te=nt.map(e=>({...e,hours:calcH(e,ns),amount:calcAmt(e,ns)}));
+const sub=+(te.reduce((a,e)=>a+e.amount,0)+ne.reduce((a,e)=>a+e.amount,0)).toFixed(2);
+const vat=+(sub*((ns.vatRate||0)/100)).toFixed(2);
+await saveInvoices([...invoices,{id:uid(),number:"TAH-1000",date:"2026-08-02",dueDate:"2026-08-16",
+status:"ubetalt",notes:"",customerName:SEED.customer.name,customerAddr:SEED.customer.address,
+customerOrg:SEED.customer.orgNr,timeEntries:te,expenseLines:ne,extraLines:[],subtotal:sub,vat,totalIncVat:+(sub+vat).toFixed(2)}]);
+setSeedMsg(`✓ Faktura TAH-1000 opprettet — kr ${fmtM(sub+vat)}. Se under «Fakturaer».`);
+setTimeout(()=>setSeedMsg(""),9000);
+};
+const exportAll=()=>{
+const data={exported:new Date().toISOString(),settings,customers,timeEntries,expenses,invoices};
+const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`tommythai-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
+};
+const importAll=async ev=>{
+const f=ev.target.files[0];if(!f)return;
+try{const d=JSON.parse(await f.text());
+if(!confirm("Dette erstatter ALLE data i skyen med innholdet i filen. Fortsette?"))return;
+if(d.settings)await saveSettings(d.settings);if(d.customers)await saveCustomers(d.customers);
+if(d.timeEntries)await saveTimeEntries(d.timeEntries);if(d.expenses)await saveExpenses(d.expenses);if(d.invoices)await saveInvoices(d.invoices);
+setSeedMsg("✓ Backup importert.");setTimeout(()=>setSeedMsg(""),6000);
+}catch(e){setErr("Import feilet: "+e.message);}
+ev.target.value="";
+};
+const addCust=async()=>{if(!nc.name)return;await saveCustomers([...customers,{...nc,id:uid()}]);setNc({name:"",address:"",orgNr:"",email:"",phone:""});};
+const delCust=async id=>{await saveCustomers(customers.filter(c=>c.id!==id));setConfirmDelC(null);};
+const F=(label,k,type="text",ro=false)=>(<div key={k} style={{marginBottom:9}}>
+<label style={{color:C.textD,fontSize:10,display:"block",marginBottom:3,letterSpacing:".08em"}}>{label}</label>
+<input type="text" inputMode={type==="number"?"decimal":undefined}
+style={{...inp,...(ro?{background:"#040d1a",color:C.textD}:{})}} value={s[k]??""} readOnly={ro}
+onChange={e=>{const v=e.target.value;
+if(type==="number"){if(v===""||/^-?\d*[.,]?\d*$/.test(v))upd(k,v.replace(",","."));}
+else upd(k,v);}}/>
+</div>);
+return(
+<div style={{padding:"24px 28px"}}>
+{confirmDelC&&(<div style={{position:"fixed",inset:0,background:"#000000bb",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+<div style={{...crd,width:320,textAlign:"center"}}>
+<h3 style={{color:C.white,margin:"0 0 8px"}}>Slett kunde?</h3>
+<div style={{display:"flex",gap:10,justifyContent:"center"}}><button onClick={()=>setConfirmDelC(null)} style={Btn("ghost")}>Avbryt</button><button onClick={()=>delCust(confirmDelC)} style={Btn("red")}>Slett</button></div>
+</div>
+</div>)}
+<h1 style={{color:C.white,fontSize:21,fontWeight:700,margin:"0 0 18px"}}>Innstillinger</h1>
+<div style={{...crd,borderLeft:`3px solid ${C.gold}`}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+<div><h3 style={{color:C.gold,fontSize:12,margin:"0 0 3px",letterSpacing:".1em"}}>OPPRETT FAKTURA — HAVN HOTELL</h3>
+<div style={{color:C.textD,fontSize:11}}>Satser 275 kr/t, kveld +20% fra 21:00, helg +25% fra lørdag 12:00 · 10 vakter · 3 utgifter · kr 40 910,25</div></div>
+<button onClick={loadSeed} style={{...Btn("pri"),whiteSpace:"nowrap"}}>Opprett faktura</button>
+</div>
+{seedMsg&&<div style={{color:C.green,fontSize:12,marginTop:10}}>{seedMsg}</div>}
+</div>
+<div style={{...crd,borderLeft:`3px solid ${C.blueL}`}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+<div><h3 style={{color:C.blueL,fontSize:12,margin:"0 0 3px",letterSpacing:".1em"}}>BACKUP</h3>
+<div style={{color:C.textD,fontSize:11}}>Last ned alle data som JSON, eller gjenopprett fra en tidligere backup.</div></div>
+<div style={{display:"flex",gap:8}}>
+<button onClick={exportAll} style={{...Btn("sec"),whiteSpace:"nowrap"}}>Last ned backup</button>
+<label style={{...Btn("ghost"),border:`1px solid ${C.bdr}`,whiteSpace:"nowrap"}}>Importer<input type="file" accept=".json" onChange={importAll} style={{display:"none"}}/></label>
+</div>
+</div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 13px",letterSpacing:".1em"}}>SATSER OG TILLEGG</h3>
+{F("NORMALSATS (KR/TIME)","normalRate","number")}
+{F("KVELDSSTART (TIME 0–23)","eveningStart","number")}
+{F("KVELDSTILLEGG (%)","eveningRate","number")}
+{F("HELGESTART LØRDAG (TIME 0–23)","weekendStart","number")}
+{F("HELGETILLEGG (%)","weekendRate","number")}
+{F("MVA-SATS (%)","vatRate","number")}
+{F("FAKTURAPREFIKS","invoicePrefix")}
+{F("NESTE FAKTURANUMMER","nextNum","number")}
+</div>
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 13px",letterSpacing:".1em"}}>FIRMAINFO (LÅST)</h3>
+{F("FIRMA","companyName","text",true)}{F("ADRESSE","address","text",true)}{F("ORG.NR","orgNr","text",true)}
+{F("BANKKONTO","bankAccount","text",true)}{F("E-POST","email","text",true)}{F("TELEFON","phone","text",true)}
+</div>
+</div>
+<button onClick={saveSett} style={{...Btn("pri"),marginBottom:8}}>{saved?"✓ Lagret!":"Lagre innstillinger"}</button>
+{err&&<div style={{color:C.red,fontSize:12,marginBottom:12}}>{err}</div>}
+{saved&&<div style={{color:C.green,fontSize:12,marginBottom:12}}>Innstillinger lagret!</div>}
+<div style={crd}>
+<h3 style={{color:C.gold,fontSize:12,margin:"0 0 12px",letterSpacing:".1em"}}>KUNDEREGISTER</h3>
+<div style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 2fr 1fr auto",gap:8,marginBottom:10}}>
+{[["name","Navn..."],["address","Adresse..."],["orgNr","Org.nr..."],["email","E-post..."],["phone","Tlf..."]].map(([k,p])=>(<input key={k} style={inp} value={nc[k]} onChange={e=>setNc(n=>({...n,[k]:e.target.value}))} placeholder={p}/>))}
+<button onClick={addCust} style={{...Btn("pri"),whiteSpace:"nowrap"}}>+ Legg til</button>
+</div>
+{customers.map(c=>(<div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 10px",borderRadius:5,marginBottom:4,background:"#071525"}}>
+<div><span style={{color:C.text,fontSize:13,fontWeight:600}}>{c.name}</span><span style={{color:C.textD,fontSize:11,marginLeft:10}}>{c.orgNr}</span><span style={{color:C.textD,fontSize:11,marginLeft:10}}>{c.address}</span></div>
+<button onClick={()=>setConfirmDelC(c.id)} style={{...Btn("red"),padding:"3px 8px",fontSize:11}}>Slett</button>
+</div>))}
+{customers.length===0&&<div style={{color:C.textD,textAlign:"center",padding:"12px 0",fontSize:13}}>Ingen kunder registrert ennå</div>}
+</div>
+</div>
+);
+}
+function App({onHub}){
+const [page,setPage]=useState("dashboard");
+const [invoices,setInvoices]=useState([]);
+const [timeEntries,setTimeEntries]=useState([]);
+const [customers,setCustomers]=useState([]);
+const [expenses,setExpenses]=useState([]);
+const [settings,setSettings]=useState(DEFSETT);
+const [printInvoice,setPrintInvoice]=useState(null);
+const [loaded,setLoaded]=useState(false);
+useEffect(()=>{
+Promise.all([db.get("inv:inv"),db.get("inv:time"),db.get("inv:cust"),db.get("inv:sett"),db.get("inv:exp")])
+.then(([inv,time,cust,sett,exp])=>{
+if(inv)setInvoices(inv);if(time)setTimeEntries(time);if(cust)setCustomers(cust);
+if(sett)setSettings(s=>({...s,...sett}));if(exp)setExpenses(exp);
+setLoaded(true);
+});
+},[]);
+const saveInvoices=async d=>{setInvoices(d);await db.set("inv:inv",d);};
+const saveTimeEntries=async d=>{setTimeEntries(d);await db.set("inv:time",d);};
+const saveCustomers=async d=>{setCustomers(d);await db.set("inv:cust",d);};
+const saveSettings=async d=>{setSettings(d);await db.set("inv:sett",d);};
+const saveExpenses=async d=>{setExpenses(d);await db.set("inv:exp",d);};
+if(!loaded)return(<div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><div style={{textAlign:"center"}}><LogoSVG w={90} h={90} noText={true}/><div style={{color:C.blueL,fontSize:11,marginTop:14,letterSpacing:".2em"}}>LASTER...</div></div></div>);
+const ctx={invoices,timeEntries,customers,expenses,settings,saveInvoices,saveTimeEntries,saveCustomers,saveExpenses,saveSettings,setPage,setPrintInvoice};
+return(
+<div style={{display:"flex",height:"100vh",background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:"hidden"}}>
+<Sidebar page={page} setPage={setPage} onHub={onHub}/>
+<div style={{flex:1,overflowY:"auto"}}>
+{page==="dashboard"&&<Dashboard {...ctx}/>}
+{page==="time"&&<TimeTracking {...ctx}/>}
+{page==="expenses"&&<ExpensesPage {...ctx}/>}
+{page==="new-invoice"&&<InvoiceBuilder {...ctx}/>}
+{page==="invoices"&&<InvoiceList {...ctx}/>}
+{page==="settings"&&<SettingsPage {...ctx}/>}
+</div>
+{printInvoice&&<EditablePreview invoice={printInvoice} settings={settings} invoices={invoices} saveInvoices={saveInvoices} onClose={()=>setPrintInvoice(null)}/>}
+</div>
+);
+}
+// ── Admin-portal: alle programmer ────────────────────────────────────────
+const PROGRAMS=[
+{id:"faktura",name:"Fakturaprogram",desc:"Timer, utgifter, fakturaer og kunderegister.",ready:true},
+{id:"hjernedump",name:"Hjernedump",desc:"Notater, mapper, kalender og diktafon.",ready:false},
+{id:"oppskrifter",name:"Oppskrifter",desc:"Oppskriftsbank med bilder og porsjonsskalering.",ready:false},
+];
+function Hub({open}){
+return(
+<div style={{minHeight:"100vh",background:C.bg,padding:"40px 20px"}}>
+<div style={{maxWidth:900,margin:"0 auto"}}>
+<div style={{textAlign:"center",marginBottom:30}}>
+<LogoSVG w={110} h={110} noText={true}/>
+<div style={{color:C.white,fontFamily:"Georgia,serif",letterSpacing:".18em",fontSize:15,marginTop:10}}>ADMIN</div>
+<div style={{color:C.textD,fontSize:12,marginTop:4}}>Tommy Aarvik Helstrøm Catering &amp; Import AS</div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}}>
+{PROGRAMS.map(p=>(
+<div key={p.id} onClick={()=>p.ready&&open(p.id)} style={{...crd,marginBottom:0,cursor:p.ready?"pointer":"default",opacity:p.ready?1:.5,borderTop:`3px solid ${p.ready?C.gold:C.bdr}`}}>
+<div style={{color:C.white,fontSize:15,fontWeight:700,marginBottom:6}}>{p.name}</div>
+<div style={{color:C.textD,fontSize:12,minHeight:36}}>{p.desc}</div>
+<div style={{marginTop:12,fontSize:11,color:p.ready?C.gold:C.textD,fontWeight:600,letterSpacing:".08em"}}>{p.ready?"ÅPNE →":"KOMMER"}</div>
+</div>))}
+</div>
+</div>
+</div>
+);
+}
+function Portal(){
+const [prog,setProg]=useState(()=>location.hash.replace("#","")||"");
+const open=id=>{location.hash=id;setProg(id);};
+const hub=()=>{location.hash="";setProg("");};
+if(prog==="faktura")return <App onHub={hub}/>;
+return <Hub open={open}/>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Gate/>);
+</script>
+</body>
+</html>
+
