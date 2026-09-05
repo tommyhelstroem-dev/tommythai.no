@@ -7,14 +7,12 @@ nav{position:sticky;top:0;z-index:20;background:var(--safir-dyp);border-bottom:1
 .merke{color:#fff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:.9rem}
 .merke b{color:var(--gull-lys)}
 .nav-l{display:flex;gap:.2rem;list-style:none}
-.nav-l a{color:#d7dde8;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;padding:.5rem .7rem;border-radius:3px}
+.nav-l a{color:#d7dde8;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;padding:.5rem .7rem;border-radius:3px;white-space:nowrap}
 .nav-l a:hover,.nav-l a.aktiv{color:var(--gull-lys);background:rgba(255,255,255,.06)}
 .nav-l a.cta{background:var(--gull);color:var(--safir-dyp);font-weight:700}
-.nav-l a.admin{color:#8a98b0;font-size:.75rem;border:1px solid rgba(255,255,255,.15);margin-left:.4rem}
-.nav-l a.admin:hover{color:var(--gull-lys);border-color:var(--gull)}
 #nav-t{display:none}
 .burger{display:none;color:#fff;font-size:1.6rem;cursor:pointer;padding:.2rem .5rem}
-@media(max-width:760px){.burger{display:block}.nav-l{display:none;position:absolute;left:0;right:0;top:100%;background:var(--safir-dyp);flex-direction:column;padding:.5rem 1rem 1rem;border-bottom:1px solid rgba(230,200,90,.35)}#nav-t:checked~.nav-l{display:flex}.nav-l a{display:block;padding:.8rem .5rem;border-bottom:1px solid rgba(255,255,255,.08)}}
+@media(max-width:940px){.burger{display:block}.nav-l{display:none;position:absolute;left:0;right:0;top:100%;background:var(--safir-dyp);flex-direction:column;padding:.5rem 1rem 1rem;border-bottom:1px solid rgba(230,200,90,.35)}#nav-t:checked~.nav-l{display:flex}.nav-l a{display:block;padding:.8rem .5rem;border-bottom:1px solid rgba(255,255,255,.08)}}
 header{padding:2.5rem 1.5rem 2rem;text-align:center;background:var(--safir-dyp)}
 .logo{width:min(560px,92vw);height:auto;display:block;margin:0 auto 1.25rem;border-radius:32px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
