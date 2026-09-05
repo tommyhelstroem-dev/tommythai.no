@@ -1143,10 +1143,107 @@ return(
 </div>
 );
 }
+// ── Hjernedump ───────────────────────────────────────────────────────────
+const HD_INBOX="Innboks";
+function hdToday(){return new Date().toISOString().slice(0,10);}
+function hdAutoFolder(text,folders){const t=(text||"").toLowerCase();for(const f of folders){if(f!==HD_INBOX&&t.includes(f.toLowerCase()))return f;}return HD_INBOX;}
+function hdFmtT(s){const m=Math.floor(s/60),x=Math.floor(s%60);return m+":"+(x<10?"0":"")+x;}
+function Recorder({onSave}){
+const [rec,setRec]=useState(null),[sec,setSec]=useState(0),[err,setErr]=useState("");
+useEffect(()=>{if(!rec)return;const id=setInterval(()=>setSec(s=>s+1),1000);return()=>clearInterval(id);},[rec]);
+const start=async()=>{setErr("");try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"";const mr=new MediaRecorder(stream,{mimeType:mime||undefined,audioBitsPerSecond:32000});const chunks=[];mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};mr.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:mr.mimeType||"audio/webm"});if(blob.size>900000){setErr("Opptaket ble for stort ("+Math.round(blob.size/1024)+" KB). Maks ca. 3 minutter.");return;}const b64=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.readAsDataURL(blob);});onSave({b64,mime:blob.type,dur:sec});};mr.start();setSec(0);setRec(mr);setTimeout(()=>{if(mr.state==="recording")mr.stop();},185000);}catch(e){setErr("Fikk ikke tilgang til mikrofonen: "+e.message);}};
+const stop=()=>{if(rec){rec.stop();setRec(null);}};
+return(<span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+{!rec?<button onClick={start} style={{...Btn("sec"),padding:"5px 10px",fontSize:11}}>● Ta opp</button>
+:<button onClick={stop} style={{...Btn("red"),padding:"5px 10px",fontSize:11}}>■ Stopp {hdFmtT(sec)}</button>}
+{err&&<span style={{color:C.red,fontSize:11}}>{err}</span>}
+</span>);}
+function AudioClip({id,dur,onDelete}){
+const [url,setUrl]=useState(null),[busy,setBusy]=useState(false);
+const load=async()=>{setBusy(true);try{const d=await firebase.firestore().collection("users").doc(CUR_UID).collection("audio").doc(id).get();if(d.exists){const a=d.data();const bin=atob(a.b64);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);setUrl(URL.createObjectURL(new Blob([arr],{type:a.mime||"audio/webm"})));}}catch(e){alert("Kunne ikke hente lyd: "+e.message);}setBusy(false);};
+return(<span style={{display:"inline-flex",alignItems:"center",gap:6,background:"#071525",borderRadius:6,padding:"3px 8px",marginRight:6,marginTop:4}}>
+{url?<audio controls src={url} style={{height:28}}/>:<button onClick={load} style={{...Btn("ghost"),padding:"2px 8px",fontSize:11,border:`1px solid ${C.bdr}`}}>{busy?"Henter…":"▶ Lyd "+hdFmtT(dur||0)}</button>}
+<button onClick={onDelete} title="Slett lydopptak" style={{...Btn("ghost"),padding:"2px 6px",fontSize:11,color:C.red}}>✕</button>
+</span>);}
+function HdCalendar({notes,sel,setSel}){
+const [ym,setYm]=useState(()=>hdToday().slice(0,7));
+const [y,m]=ym.split("-").map(Number);const first=new Date(y,m-1,1);const start=(first.getDay()+6)%7;const days=new Date(y,m,0).getDate();
+const counts={};notes.forEach(n=>{counts[n.date]=(counts[n.date]||0)+1;});
+const shift=d=>{const nd=new Date(y,m-1+d,1);setYm(nd.toISOString().slice(0,7));};
+const cells=[];for(let i=0;i<start;i++)cells.push(null);for(let d=1;d<=days;d++)cells.push(d);
+return(<div style={{...crd,padding:"12px 14px"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+<button onClick={()=>shift(-1)} style={{...Btn("ghost"),padding:"2px 8px"}}>‹</button>
+<span style={{color:C.gold,fontSize:12,letterSpacing:".1em"}}>{first.toLocaleDateString("nb-NO",{month:"long",year:"numeric"}).toUpperCase()}</span>
+<button onClick={()=>shift(1)} style={{...Btn("ghost"),padding:"2px 8px"}}>›</button></div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,fontSize:11}}>
+{["M","T","O","T","F","L","S"].map((d,i)=><div key={i} style={{color:C.textD,textAlign:"center"}}>{d}</div>)}
+{cells.map((d,i)=>{if(!d)return <div key={i}/>;const ds=ym+"-"+(d<10?"0":"")+d;const n=counts[ds]||0;const isSel=sel===ds;return(<div key={i} onClick={()=>setSel(isSel?null:ds)} style={{textAlign:"center",padding:"5px 0",borderRadius:4,cursor:"pointer",background:isSel?C.gold:n?`${C.gold}22`:"transparent",color:isSel?"#000":n?C.gold:C.textD,fontWeight:n?600:400,border:ds===hdToday()?`1px solid ${C.blueL}`:"1px solid transparent"}}>{d}</div>);})}
+</div></div>);}
+function Hjernedump({onHub}){
+const [notes,setNotes]=useState([]),[folders,setFolders]=useState([HD_INBOX]),[loaded,setLoaded]=useState(false);
+const [view,setView]=useState("alle"),[q,setQ]=useState(""),[selDate,setSelDate]=useState(null),[newF,setNewF]=useState("");
+const [draft,setDraft]=useState(""),[draftId,setDraftId]=useState(null),[flash,setFlash]=useState("");
+const taRef=React.useRef(null),timer=React.useRef(null);
+useEffect(()=>{Promise.all([db.get("hd:notes"),db.get("hd:folders")]).then(([n,f])=>{if(n)setNotes(n);if(f&&f.length)setFolders(f);setLoaded(true);setTimeout(()=>taRef.current&&taRef.current.focus(),100);});},[]);
+const saveNotes=async d=>{setNotes(d);await db.set("hd:notes",d);};
+const saveFolders=async d=>{setFolders(d);await db.set("hd:folders",d);};
+const persistDraft=(text,id)=>{clearTimeout(timer.current);timer.current=setTimeout(()=>{setNotes(prev=>{let next;if(id&&prev.some(n=>n.id===id)){next=prev.map(n=>n.id===id?{...n,text,folder:n.folderLocked?n.folder:hdAutoFolder(text,folders),updated:Date.now()}:n);}else{next=[...prev,{id,text,folder:hdAutoFolder(text,folders),date:hdToday(),created:Date.now(),updated:Date.now(),audio:[]}];}db.set("hd:notes",next);return next;});},400);};
+const onDraft=e=>{const v=e.target.value;setDraft(v);let id=draftId;if(!id&&v.trim()){id=uid();setDraftId(id);}if(id)persistDraft(v,id);};
+const finishDraft=()=>{clearTimeout(timer.current);if(draftId&&draft.trim()){setNotes(prev=>{const ex=prev.find(n=>n.id===draftId);const next=ex?prev.map(n=>n.id===draftId?{...n,text:draft,folder:hdAutoFolder(draft,folders),updated:Date.now()}:n):[...prev,{id:draftId,text:draft,folder:hdAutoFolder(draft,folders),date:hdToday(),created:Date.now(),updated:Date.now(),audio:[]}];db.set("hd:notes",next);return next;});setFlash("✓ Lagret");setTimeout(()=>setFlash(""),1500);}setDraft("");setDraftId(null);taRef.current&&taRef.current.focus();};
+const upd=async(id,patch)=>await saveNotes(notes.map(n=>n.id===id?{...n,...patch,updated:Date.now()}:n));
+const del=async id=>{if(!confirm("Slette notatet?"))return;const n=notes.find(x=>x.id===id);for(const a of (n?.audio||[])){try{await firebase.firestore().collection("users").doc(CUR_UID).collection("audio").doc(a.id).delete();}catch{}}await saveNotes(notes.filter(x=>x.id!==id));};
+const addFolder=async()=>{const f=newF.trim();if(!f||folders.includes(f))return;await saveFolders([...folders,f]);setNewF("");};
+const delFolder=async f=>{if(f===HD_INBOX)return;if(!confirm(`Slette mappen «${f}»? Notatene flyttes til Innboks.`))return;await saveFolders(folders.filter(x=>x!==f));await saveNotes(notes.map(n=>n.folder===f?{...n,folder:HD_INBOX}:n));if(view===f)setView("alle");};
+const addAudio=async(noteId,a)=>{const id=uid();await firebase.firestore().collection("users").doc(CUR_UID).collection("audio").doc(id).set({...a,noteId,created:firebase.firestore.FieldValue.serverTimestamp()});await upd(noteId,{audio:[...(notes.find(n=>n.id===noteId)?.audio||[]),{id,dur:a.dur}]});};
+const quickAudio=async a=>{const id=uid();const note={id,text:"",folder:HD_INBOX,date:hdToday(),created:Date.now(),updated:Date.now(),audio:[]};const next=[...notes,note];setNotes(next);await db.set("hd:notes",next);await firebase.firestore().collection("users").doc(CUR_UID).collection("audio").doc(id).set({...a,noteId:id,created:firebase.firestore.FieldValue.serverTimestamp()});await saveNotes(next.map(n=>n.id===id?{...n,audio:[{id,dur:a.dur}]}:n));setFlash("✓ Lydnotat lagret");setTimeout(()=>setFlash(""),1500);};
+const delAudio=async(noteId,aid)=>{try{await firebase.firestore().collection("users").doc(CUR_UID).collection("audio").doc(aid).delete();}catch{}await upd(noteId,{audio:(notes.find(n=>n.id===noteId)?.audio||[]).filter(a=>a.id!==aid)});};
+if(!loaded)return(<div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><div style={{textAlign:"center"}}><LogoSVG w={90} h={90} noText={true}/><div style={{color:C.blueL,fontSize:11,marginTop:14,letterSpacing:".2em"}}>LASTER...</div></div></div>);
+let list=notes.filter(n=>n.id!==draftId);
+if(view==="idag")list=list.filter(n=>n.date===hdToday());else if(view!=="alle"&&view!=="kal")list=list.filter(n=>n.folder===view);
+if(selDate)list=list.filter(n=>n.date===selDate);
+if(q.trim()){const qq=q.toLowerCase();list=list.filter(n=>(n.text||"").toLowerCase().includes(qq)||(n.folder||"").toLowerCase().includes(qq));}
+list=[...list].sort((a,b)=>(b.updated||0)-(a.updated||0));
+const side=(id,label,count)=>(<div key={id} onClick={()=>{setView(id);setSelDate(null);}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 11px",borderRadius:6,marginBottom:2,cursor:"pointer",background:view===id?`${C.gold}18`:"transparent",color:view===id?C.gold:C.textD,borderLeft:view===id?`3px solid ${C.gold}`:"3px solid transparent",fontSize:13}}><span>{label}</span>{count!=null&&<span style={{fontSize:10,opacity:.7}}>{count}</span>}</div>);
+return(<div style={{display:"flex",height:"100vh",background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:"hidden"}}>
+<div style={{width:210,background:C.side,borderRight:`1px solid ${C.bdr}`,display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto"}}>
+<div style={{padding:"18px 14px 10px",borderBottom:`1px solid ${C.bdr}`,textAlign:"center"}}><LogoSVG w={60} h={60} noText={true}/><div style={{color:C.white,fontSize:11,letterSpacing:".18em",marginTop:6,fontFamily:"Georgia,serif"}}>HJERNEDUMP</div></div>
+<div style={{padding:"10px 8px",flex:1}}>
+<div onClick={onHub} style={{padding:"8px 11px",borderRadius:6,marginBottom:8,cursor:"pointer",color:C.gold,fontSize:12,border:`1px solid ${C.bdr}`}}>← Alle programmer</div>
+{side("alle","Alle notater",notes.length)}{side("idag","I dag",notes.filter(n=>n.date===hdToday()).length)}{side("kal","Kalender")}
+<div style={{color:C.textD,fontSize:10,letterSpacing:".12em",margin:"12px 11px 4px"}}>MAPPER</div>
+{folders.map(f=>(<div key={f} style={{display:"flex",alignItems:"center"}}><div style={{flex:1}}>{side(f,f,notes.filter(n=>n.folder===f).length)}</div>{f!==HD_INBOX&&<button onClick={()=>delFolder(f)} title="Slett mappe" style={{...Btn("ghost"),padding:"2px 6px",fontSize:11,color:C.textD}}>✕</button>}</div>))}
+<div style={{display:"flex",gap:4,marginTop:8}}><input style={{...inp,padding:"5px 8px",fontSize:12}} value={newF} onChange={e=>setNewF(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addFolder()} placeholder="Ny mappe…"/><button onClick={addFolder} style={{...Btn("pri"),padding:"5px 9px"}}>+</button></div>
+<div style={{color:C.textD,fontSize:10,marginTop:8,padding:"0 4px",lineHeight:1.5}}>Notater sorteres automatisk i mappen hvis mappenavnet nevnes i teksten.</div>
+</div></div>
+<div style={{flex:1,overflowY:"auto",padding:"22px 26px"}}>
+<div style={{...crd,borderLeft:`3px solid ${C.gold}`,padding:"14px 16px"}}>
+<textarea ref={taRef} value={draft} onChange={onDraft} onKeyDown={e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))finishDraft();}} placeholder="Dump tanken her… (lagres mens du skriver · Ctrl+Enter = ferdig)" style={{...inp,minHeight:80,resize:"vertical",fontSize:15,lineHeight:1.5}}/>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,flexWrap:"wrap",gap:8}}>
+<div style={{display:"flex",alignItems:"center",gap:10}}><Recorder onSave={a=>draftId?addAudio(draftId,a):quickAudio(a)}/><span style={{color:C.textD,fontSize:11}}>{draftId?"→ "+hdAutoFolder(draft,folders):"Lydnotat uten tekst går til Innboks"}</span></div>
+<div style={{display:"flex",alignItems:"center",gap:10}}>{flash&&<span style={{color:C.green,fontSize:12}}>{flash}</span>}<button onClick={finishDraft} style={Btn("pri")}>+ Nytt notat</button></div>
+</div></div>
+<div style={{display:"flex",gap:10,alignItems:"center",marginBottom:12,flexWrap:"wrap"}}>
+<input style={{...inp,maxWidth:320}} value={q} onChange={e=>setQ(e.target.value)} placeholder="Søk i notater…"/>
+{selDate&&<span style={{color:C.gold,fontSize:12}}>Dato: {fmtD(selDate)} <button onClick={()=>setSelDate(null)} style={{...Btn("ghost"),padding:"1px 6px",fontSize:11}}>✕</button></span>}
+<span style={{color:C.textD,fontSize:12,marginLeft:"auto"}}>{list.length} notat(er)</span></div>
+{view==="kal"&&<HdCalendar notes={notes} sel={selDate} setSel={setSelDate}/>}
+{list.length===0&&<div style={{...crd,textAlign:"center",color:C.textD,padding:"30px 0"}}>Ingen notater her ennå.</div>}
+{list.map(n=>(<div key={n.id} style={{...crd,padding:"12px 16px"}}>
+<textarea value={n.text} onChange={e=>upd(n.id,{text:e.target.value})} style={{...inp,background:"transparent",border:"none",padding:0,fontSize:14,lineHeight:1.5,minHeight:24,resize:"vertical"}} placeholder="(tomt notat)"/>
+<div>{(n.audio||[]).map(a=><AudioClip key={a.id} id={a.id} dur={a.dur} onDelete={()=>delAudio(n.id,a.id)}/>)}</div>
+<div style={{display:"flex",gap:10,alignItems:"center",marginTop:8,flexWrap:"wrap",fontSize:11,color:C.textD}}>
+<input type="date" value={n.date} onChange={e=>upd(n.id,{date:e.target.value})} style={{...inp,width:140,padding:"3px 6px",fontSize:11}}/>
+<select value={n.folder} onChange={e=>upd(n.id,{folder:e.target.value,folderLocked:true})} style={{...inp,width:150,padding:"3px 6px",fontSize:11}}>{folders.map(f=><option key={f}>{f}</option>)}</select>
+<Recorder onSave={a=>addAudio(n.id,a)}/>
+<span style={{marginLeft:"auto"}}>{new Date(n.updated||n.created).toLocaleString("nb-NO",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
+<button onClick={()=>del(n.id)} style={{...Btn("red"),padding:"3px 8px",fontSize:11}}>Slett</button>
+</div></div>))}
+</div></div>);}
 // ── Admin-portal: alle programmer ────────────────────────────────────────
 const PROGRAMS=[
 {id:"faktura",name:"Fakturaprogram",desc:"Timer, utgifter, fakturaer og kunderegister.",ready:true},
-{id:"hjernedump",name:"Hjernedump",desc:"Notater, mapper, kalender og diktafon.",ready:false},
+{id:"hjernedump",name:"Hjernedump",desc:"Notater, mapper, kalender og diktafon.",ready:true},
 {id:"oppskrifter",name:"Oppskrifter",desc:"Oppskriftsbank med bilder og porsjonsskalering.",ready:false},
 ];
 function Hub({open}){
@@ -1175,6 +1272,7 @@ const [prog,setProg]=useState(()=>location.hash.replace("#","")||"");
 const open=id=>{location.hash=id;setProg(id);};
 const hub=()=>{location.hash="";setProg("");};
 if(prog==="faktura")return <App onHub={hub}/>;
+if(prog==="hjernedump")return <Hjernedump onHub={hub}/>;
 return <Hub open={open}/>;
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<Gate/>);
