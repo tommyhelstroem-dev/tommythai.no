@@ -41,6 +41,8 @@ address{font-style:normal;font-size:1rem}
 address a{color:var(--safir);text-decoration:none;border-bottom:1px solid var(--gull)}
 footer{background:var(--safir-dyp);color:#d7dde8;text-align:center;padding:1.5rem;font-size:.85rem;font-family:Arial,Helvetica,sans-serif;letter-spacing:.05em}
 footer b{color:var(--gull-lys)}
+footer a{color:#d7dde8}
+.samtykke a{color:var(--safir)}
 form{display:grid;gap:.8rem}
 .rad{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
 label{display:block;font-family:Arial,Helvetica,sans-serif;font-size:.85rem;color:var(--safir);font-weight:700;margin-bottom:.25rem;letter-spacing:.03em}
@@ -108,7 +110,7 @@ textarea{min-height:120px;resize:vertical}
 </select></div>
 </div>
 <div><label for="melding">Melding *</label><textarea id="melding" name="Melding" required placeholder="Fortell kort om arrangementet, sted og ønsker."></textarea></div>
-<label class="samtykke"><input type="checkbox" name="Samtykke" value="Ja" required> Jeg samtykker til at opplysningene brukes til å besvare forespørselen min. De deles ikke videre og slettes når saken er avsluttet.</label>
+<label class="samtykke"><input type="checkbox" name="Samtykke" value="Ja" required> Jeg samtykker til at opplysningene brukes til å besvare forespørselen min. De deles ikke videre og slettes når saken er avsluttet. <a href="personvern.html" target="_blank" rel="noopener">Les personvernerklæringen.</a></label>
 <div class="h-captcha" data-captcha="true"></div>
 <div class="knapper"><button class="knapp" type="submit">Send forespørsel</button></div>
 </form>
@@ -126,7 +128,7 @@ textarea{min-height:120px;resize:vertical}
 </section>
 </main>
 
-<footer>© 2026 <b>Tommythai</b> · Worldwide</footer>
+<footer>© 2026 <b>Tommythai</b> · Worldwide · <a href="personvern.html">Personvern</a></footer>
 
 <script src="https://web3forms.com/client/script.js" async defer></script>
 </body>
