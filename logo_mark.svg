@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="88" fill="none" stroke="#4a7ab5" stroke-width="1.2" opacity=".9"/>
+<circle cx="100" cy="100" r="72" fill="none" stroke="#4a7ab5" stroke-width=".8" stroke-dasharray="3,5" opacity=".7"/>
+<polygon points="100,22 158,118 42,118" fill="none" stroke="#4a7ab5" stroke-width="1.2" opacity=".7"/>
+<polygon points="100,178 158,82 42,82" fill="none" stroke="#4a7ab5" stroke-width="1.2" opacity=".7"/>
+<line x1="12" y1="100" x2="65" y2="100" stroke="#4a7ab5" stroke-width=".8" opacity=".6"/>
+<line x1="135" y1="100" x2="188" y2="100" stroke="#4a7ab5" stroke-width=".8" opacity=".6"/>
+<rect x="10" y="68" width="9" height="52" fill="none" stroke="#4a7ab5" stroke-width="1" opacity=".7"/>
+<rect x="8" y="63" width="13" height="6" fill="#4a7ab5" opacity=".5"/>
+<rect x="8" y="120" width="13" height="6" fill="#4a7ab5" opacity=".5"/>
+<rect x="181" y="68" width="9" height="52" fill="none" stroke="#4a7ab5" stroke-width="1" opacity=".7"/>
+<rect x="179" y="63" width="13" height="6" fill="#4a7ab5" opacity=".5"/>
+<rect x="179" y="120" width="13" height="6" fill="#4a7ab5" opacity=".5"/>
+<polygon points="100,55 135,75 135,115 100,135 65,115 65,75" fill="none" stroke="#c9a84c" stroke-width="3"/>
+<ellipse cx="100" cy="95" rx="22" ry="14" fill="none" stroke="#c9a84c" stroke-width="1.6"/>
+<path d="M78,95 Q100,78 122,95" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity=".8"/>
+<circle cx="100" cy="95" r="7" fill="#c9a84c"/>
+<circle cx="82" cy="95" r="2" fill="#c9a84c" opacity=".8"/>
+<circle cx="118" cy="95" r="2" fill="#c9a84c" opacity=".8"/>
+<circle cx="91" cy="82" r="1.5" fill="#c9a84c" opacity=".7"/>
+<circle cx="109" cy="82" r="1.5" fill="#c9a84c" opacity=".7"/>
+<circle cx="91" cy="108" r="1.5" fill="#c9a84c" opacity=".7"/>
+<circle cx="109" cy="108" r="1.5" fill="#c9a84c" opacity=".7"/>
+</svg>
