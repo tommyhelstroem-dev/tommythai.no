@@ -5,102 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tommythai – Kokk, catering og import</title>
 <meta name="description" content="Tommy Aarvik Helstrøm – kokk med 30 års erfaring. Catering, import og kjøkkenledelse – oppdrag worldwide.">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" href="logo_mark.svg">
+<style>
+html,body{margin:0;height:100%;background:#0a1628;font-family:Georgia,"Times New Roman",serif;color:#c9d3e3}
+body{display:flex;align-items:center;justify-content:center;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;background:url(logo_mark.svg) center / min(120vh,120vw) no-repeat;opacity:.07;pointer-events:none}
+a.inn{position:relative;display:block;text-decoration:none;text-align:center;padding:2rem 1.2rem}
+a.inn img{width:min(620px,90vw);height:auto;border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 0 1px rgba(230,200,90,.25);transition:transform .35s ease,box-shadow .35s ease}
+a.inn:hover img,a.inn:focus img{transform:translateY(-6px) scale(1.015);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 2px #c9a227}
+a.inn span{display:block;margin-top:1.6rem;font-family:Arial,Helvetica,sans-serif;font-size:.8rem;letter-spacing:.32em;text-transform:uppercase;color:#e6c85a;opacity:.85;transition:opacity .3s}
+a.inn:hover span{opacity:1}
+a.inn span::after{content:"→";display:inline-block;margin-left:.6rem;transition:transform .3s}
+a.inn:hover span::after{transform:translateX(6px)}
+.fot{position:fixed;bottom:1rem;left:0;right:0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:.7rem;letter-spacing:.1em;color:#5b6a80}
+.fot a{color:#5b6a80;text-decoration:none}
+@media(prefers-reduced-motion:reduce){a.inn img,a.inn span,a.inn span::after{transition:none}}
+</style>
 </head>
 <body>
-<nav><div class="nav-inn">
-<a class="merke" href="index.html">Tommy<b>thai</b></a>
-<label class="burger" for="nav-t" aria-label="Meny">&#9776;</label>
-<input type="checkbox" id="nav-t">
-<ul class="nav-l">
-<li><a class="aktiv" href="index.html">Hjem</a></li>
-<li><a href="artikler.html">Artikler</a></li>
-<li><a href="bilder.html">Bilder</a></li>
-<li><a href="meny.html">Menyer</a></li>
-<li><a href="events.html">Events &amp; pop-ups</a></li>
-<li><a class="cta" href="index.html#forespoersel">Forespørsel</a></li>
-<li><a class="admin" href="admin.html" title="Kun for administrator">Admin logg inn</a></li>
-</ul></div></nav>
-<header>
-<img class="logo" src="logo.jpg" alt="Tommy Aarvik Helstrøm – Catering &amp; Import">
-<h1 class="sr">Tommy Aarvik Helstrøm</h1>
-<div class="under">Kokk · Catering · Import</div>
-<div class="strek"></div>
-</header>
-
-<main>
-<section>
-<h2>Om meg</h2>
-<p>Kokk med rundt 30 års erfaring fra fine dining, hotellkjøkken, catering, offshore, restaurant og kantine – og ledererfaring fra alle grener innen kokkfaget. Jeg driver Tommy Aarvik Helstrøm Catering &amp; Import AS og tar oppdrag worldwide.</p>
-<p>Jeg jobber praktisk og resultatorientert: god mat, ærlige avtaler og løsninger tilpasset det kunden faktisk trenger – ikke standardpakker.</p>
-</section>
-
-<section>
-<h2>Dette gjør jeg</h2>
-<div class="kort">
-<div><strong>Catering</strong><span>Selskap, arrangementer og bedriftsmat. Fra klassisk norsk til thailandsk – alltid laget fra bunnen.</span></div>
-<div><strong>Import fra Thailand</strong><span>Råvarer og produkter fra Thailand til Norge, med orden på toll, dokumenter og logistikk.</span></div>
-<div><strong>Kokebok og oppskrifter</strong><span>30 års kjøkkenerfaring satt i system. Oppskrifter for både hjemmekokken og profesjonelle.</span></div>
-</div>
-</section>
-
-<section>
-<h2>Utforsk</h2>
-<div class="kort">
-<div><strong>Menyer</strong><span>Eksempelmenyer for selskap, bedrift og thai-kvelder.</span><br><a class="knapp lys" style="margin-top:.8rem;padding:.5rem 1rem" href="meny.html">Se menyer</a></div>
-<div><strong>Events &amp; pop-ups</strong><span>Kommende arrangementer og pop-up-kvelder.</span><br><a class="knapp lys" style="margin-top:.8rem;padding:.5rem 1rem" href="events.html">Se program</a></div>
-<div><strong>Artikler</strong><span>Tanker fra kjøkkenet – teknikk, råvarer og Thailand.</span><br><a class="knapp lys" style="margin-top:.8rem;padding:.5rem 1rem" href="artikler.html">Les</a></div>
-</div>
-</section>
-
-<section id="forespoersel">
-<h2>Send catering-forespørsel</h2>
-<p class="liten">Fyll ut skjemaet, så svarer jeg på e-post – normalt innen 1–2 virkedager.</p>
-<form action="https://api.web3forms.com/submit" method="POST">
-<input type="hidden" name="access_key" value="9103aeab-246b-48b5-8df5-68ad47ae24ba">
-<input type="hidden" name="subject" value="Catering-forespørsel via tommythai.no">
-<input type="hidden" name="from_name" value="tommythai.no">
-<input type="hidden" name="redirect" value="https://tommythai.no/takk.html">
-<input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
-<div class="rad">
-<div><label for="navn">Navn *</label><input id="navn" name="Navn" type="text" required autocomplete="name"></div>
-<div><label for="epost">E-post *</label><input id="epost" name="email" type="email" required autocomplete="email"></div>
-</div>
-<div class="rad">
-<div><label for="tlf">Telefon</label><input id="tlf" name="Telefon" type="tel" autocomplete="tel"></div>
-<div><label for="dato">Ønsket dato</label><input id="dato" name="Dato" type="date"></div>
-</div>
-<div class="rad">
-<div><label for="gjester">Antall gjester</label><input id="gjester" name="Antall gjester" type="number" min="1" inputmode="numeric"></div>
-<div><label for="type">Type arrangement</label>
-<select id="type" name="Type arrangement">
-<option value="">Velg…</option>
-<option>Selskap / privat</option>
-<option>Bedrift / kantine</option>
-<option>Bryllup</option>
-<option>Konferanse / event</option>
-<option>Annet</option>
-</select></div>
-</div>
-<div><label for="melding">Melding *</label><textarea id="melding" name="Melding" required placeholder="Fortell kort om arrangementet, sted og ønsker."></textarea></div>
-<label class="samtykke"><input type="checkbox" name="Samtykke" value="Ja" required> Jeg samtykker til at opplysningene brukes til å besvare forespørselen min. De deles ikke videre og slettes når saken er avsluttet. <a href="personvern.html" target="_blank" rel="noopener">Les personvernerklæringen.</a></label>
-<div class="h-captcha" data-captcha="true"></div>
-<div class="knapper"><button class="knapp" type="submit">Send forespørsel</button></div>
-</form>
-</section>
-
-<section>
-<h2>Kontakt</h2>
-<address>
-<p>Tommy Aarvik Helstrøm Catering &amp; Import AS</p>
-<p>E-post: <a href="mailto:tommy.helstroem@gmail.com">tommy.helstroem@gmail.com</a></p>
-</address>
-<div class="knapper">
-<a class="knapp" href="mailto:tommy.helstroem@gmail.com">Send e-post</a>
-</div>
-</section>
-</main>
-<script src="https://web3forms.com/client/script.js" async defer></script>
-<footer>© 2026 <b>Tommythai</b> · Worldwide · <a href="personvern.html">Personvern</a> · <a href="admin.html">Admin logg inn</a></footer>
+<a class="inn" href="hjem.html" aria-label="Gå til hjemmesiden">
+<img src="logo.jpg" alt="Tommy Aarvik Helstrøm – Catering &amp; Import">
+<span>Gå inn</span>
+</a>
+<div class="fot">© 2026 Tommythai · <a href="admin.html">Admin logg inn</a></div>
 </body>
 </html>
