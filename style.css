@@ -77,3 +77,21 @@ article.post{background:rgba(255,253,247,.74);border:1px solid var(--linje);bord
 article.post .meta{font-family:Arial,Helvetica,sans-serif;font-size:.8rem;color:var(--gull);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem}
 article.post h3{font-size:1.4rem}
 article.post p{font-size:1.02rem}
+
+/* ── App-installasjon ── */
+#tt-install{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:#0a1628;color:#c9d3e3;border-top:1px solid rgba(201,162,39,.35);box-shadow:0 -8px 30px rgba(0,0,0,.35);font-family:Arial,Helvetica,sans-serif;font-size:.9rem}
+#tt-install span{flex:1;min-width:0}
+#tt-install b{color:#e6c85a}
+#tt-install .knapp{margin:0;padding:.5rem .9rem;font-size:.85rem;white-space:nowrap}
+#tt-install button{background:none;border:0;color:#7e8ba3;font-size:1rem;cursor:pointer;padding:.3rem}
+.app-side{text-align:center}
+.app-side .ikon{width:120px;height:120px;border-radius:26px;box-shadow:0 12px 40px rgba(0,0,0,.35);margin:0 auto 1rem;display:block}
+.app-side .knapp.stor{font-size:1.1rem;padding:.9rem 2rem}
+.steg{counter-reset:s;display:grid;gap:.7rem;margin:1rem 0 0;padding:0;list-style:none;text-align:left}
+.steg li{counter-increment:s;position:relative;padding:.7rem .9rem .7rem 3rem;background:rgba(10,22,40,.06);border-radius:10px}
+.steg li::before{content:counter(s);position:absolute;left:.9rem;top:.65rem;width:1.6rem;height:1.6rem;border-radius:50%;background:#0a1628;color:#e6c85a;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.plattform{display:none}
+.plattform.vis{display:block}
+.velger{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.velger button{background:none;border:1px solid rgba(10,22,40,.3);border-radius:999px;padding:.4rem 1rem;cursor:pointer;font:inherit;color:inherit}
+.velger button.aktiv{background:#0a1628;color:#e6c85a;border-color:#0a1628}

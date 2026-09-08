@@ -6,6 +6,12 @@
 <title>Tommythai – Kokk, catering og import</title>
 <meta name="description" content="Tommy Aarvik Helstrøm – kokk med 30 års erfaring. Catering, import og kjøkkenledelse – oppdrag worldwide.">
 <link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tommythai">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 html,body{margin:0;height:100%;background:#0a1628;font-family:Georgia,"Times New Roman",serif;color:#c9d3e3}
 body{display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
@@ -29,5 +35,6 @@ a.inn:hover span::after{transform:translateX(6px)}
 </a>
 <div class="fot">© 2026 Tommythai · <a href="admin.html">Admin logg inn</a></div>
 <script>document.addEventListener("click",function(e){if(e.target.closest(".fot"))return;if(e.target.closest("a.inn"))return;location.href="hjem.html";});document.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" ")location.href="hjem.html";});</script>
+<script src="app.js" defer></script>
 </body>
 </html>
