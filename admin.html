@@ -343,6 +343,79 @@ if(!w){return downloadInvoiceFile(inv,settings);}
 w.document.open();w.document.write(buildInvoiceHTML(inv,settings));w.document.close();
 return{ok:true};
 }
+// ── Ekte PDF (html2pdf.js lastes først når det trengs) ─────────────────────
+function loadHtml2pdf(){
+return new Promise((res,rej)=>{
+if(window.html2pdf)return res();
+const s=document.createElement("script");
+s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+s.onload=()=>res();s.onerror=()=>rej(new Error("Kunne ikke laste PDF-modulen (ingen nett?)"));
+document.head.appendChild(s);
+});
+}
+async function makeInvoicePDF(inv,settings){
+await loadHtml2pdf();
+const html=buildInvoiceHTML(inv,settings).replace(/<script>[\s\S]*?<\/script>/,"");
+const body=(html.match(/<body>([\s\S]*)<\/body>/)||[,""])[1];
+const host=document.createElement("div");
+host.style.cssText="position:absolute;left:-10000px;top:0;width:794px;background:#fff;font-family:system-ui,-apple-system,sans-serif;color:#1a2a40";
+host.innerHTML='<style>.pdfhost,.pdfhost *{margin:0;padding:0;box-sizing:border-box}.pdfhost table{width:100%;border-collapse:collapse;font-size:12px}.pdfhost th{padding:9px 11px;color:#fff;font-weight:600;font-size:11px;letter-spacing:.05em}</style><div class="pdfhost">'+body+'</div>';
+document.body.appendChild(host);
+try{
+const el=host.querySelector(".pdfhost>div");
+el.style.minHeight="1122px";el.style.width="794px";
+const pdf=await html2pdf().set({margin:0,filename:`Faktura-${inv.number}.pdf`,image:{type:"jpeg",quality:.9},html2canvas:{scale:1.6,useCORS:true,backgroundColor:"#ffffff",windowWidth:794,scrollX:0,scrollY:0},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"]}}).from(el).toPdf().get("pdf");
+return pdf;
+}finally{host.remove();}
+}
+function savePdfBlob(blob,name){
+const url=URL.createObjectURL(blob);
+const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";a.style.display="none";
+document.body.appendChild(a);a.click();
+setTimeout(()=>{try{document.body.removeChild(a);URL.revokeObjectURL(url);}catch{}},4000);
+}
+const pdfCol=()=>firebase.firestore().collection("users").doc(CUR_UID).collection("pdf");
+async function archivePDF(inv,b64){
+if(!CUR_UID||!inv.id)return false;
+if(b64.length>950000)return false;
+try{await pdfCol().doc(inv.id).set({number:inv.number,customer:inv.customerName||"",size:b64.length,updated:firebase.firestore.FieldValue.serverTimestamp(),data:b64});return true;}
+catch(e){console.error(e);return false;}
+}
+async function getArchivedPDF(inv){
+if(!CUR_UID||!inv.id)return null;
+try{const d=await pdfCol().doc(inv.id).get();return d.exists?d.data().data:null;}catch(e){console.error(e);return null;}
+}
+function b64ToBlob(b64,type){
+const bin=atob(b64),u=new Uint8Array(bin.length);
+for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+return new Blob([u],{type});
+}
+// Lager ny PDF fra fakturadata, laster den ned og lagrer kopi i arkivet på siden
+async function downloadInvoicePDF(inv,settings,onStatus=()=>{}){
+try{
+onStatus("Lager PDF…");
+const pdf=await makeInvoicePDF(inv,settings);
+const name=`Faktura-${inv.number}.pdf`;
+const blob=pdf.output("blob");
+savePdfBlob(blob,name);
+onStatus("✓ PDF lastet ned — lagrer kopi på siden…");
+const b64=pdf.output("datauristring").split(",")[1];
+const ok=await archivePDF(inv,b64);
+onStatus(ok?"✓ PDF lastet ned og lagret på siden":"✓ PDF lastet ned (for stor til å lagres på siden)");
+return{ok:true};
+}catch(e){
+console.error(e);
+onStatus("PDF feilet ("+(e.message||e)+") — åpner utskriftsversjon");
+return openInvoicePrint(inv,settings);
+}
+}
+// Henter lagret PDF fra siden hvis den finnes, ellers lages og lagres en ny
+async function downloadArchivedOrNew(inv,settings,onStatus=()=>{}){
+onStatus("Henter lagret PDF…");
+const b64=await getArchivedPDF(inv);
+if(b64){savePdfBlob(b64ToBlob(b64,"application/pdf"),`Faktura-${inv.number}.pdf`);onStatus("✓ Lagret PDF lastet ned");return{ok:true};}
+return downloadInvoicePDF(inv,settings,onStatus);
+}
 // ── Redigerbar forhåndsvisning ─────────────────────────────────────────────
 function EditablePreview({invoice,settings,invoices,saveInvoices,onClose,isDraft=false,onSaveDraft}){
 const [inv,setInv]=useState(()=>({...invoice,
@@ -384,11 +457,10 @@ const isEd=(t,i)=>editIdx&&editIdx.t===t&&editIdx.i===i;
 const togEd=(t,i)=>setEditIdx(isEd(t,i)?null:{t,i});
 const addLine=()=>setInv(p=>recalc({...p,extraLines:[...(p.extraLines||[]),{id:uid(),desc:"Ny post",qty:1,unit:"stk",price:0}]}));
 const saveChanges=async()=>{setSaving(true);await saveInvoices(invoices.map(x=>x.id===inv.id?inv:x));setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),2500);};
-const download=()=>{
-setDlStatus("Åpner…");
-const r=openInvoicePrint(inv,settings);
-if(r.ok){setDlStatus("✓ Åpnet i ny fane → Ctrl+P → Lagre som PDF");setTimeout(()=>setDlStatus(""),10000);}
-else{setHtmlOut(r.html);setDlStatus("Blokkert — kopier koden under");}
+const download=async()=>{
+const r=await downloadInvoicePDF(inv,settings,setDlStatus);
+if(r&&r.ok){setTimeout(()=>setDlStatus(""),12000);}
+else if(r&&r.html){setHtmlOut(r.html);setDlStatus("Blokkert — kopier koden under");}
 };
 const P={hdr:"#1a3a6b",acc:"#c9a84c",light:"#e8f2fc",bdr:"#c5d8ef",txt:"#1a2a40",txtD:"#5a7a9a",wh:"#fff"};
 const ei={...inp,fontSize:11,padding:"4px 6px"};
@@ -405,7 +477,8 @@ return(
 {isDraft
 ?<button onClick={()=>onSaveDraft(inv)} style={{...Btn("pri"),fontSize:12}}>Lagre som faktura</button>
 :<button onClick={saveChanges} style={{...Btn("sec"),fontSize:12}}>{saving?"Lagrer...":(saved?"✓ Lagret!":"Lagre endringer")}</button>}
-<button onClick={download} style={{...Btn(isDraft?"sec":"pri"),fontSize:12}}>Skriv ut / PDF</button>
+<button onClick={download} style={{...Btn(isDraft?"sec":"pri"),fontSize:12}}>Last ned PDF</button>
+<button onClick={()=>openInvoicePrint(inv,settings)} title="Åpne utskriftsversjon i ny fane" style={{...Btn("ghost"),fontSize:12,border:`1px solid ${C.bdr}`}}>Skriv ut</button>
 <button onClick={onClose} style={{...Btn("ghost"),fontSize:12}}>Lukk</button>
 </div>
 </div>
@@ -943,11 +1016,14 @@ const togAll=()=>setSel(allSel?[]:filtered.map(i=>i.id));
 const dlSel=()=>{
 const list=invoices.filter(i=>sel.includes(i.id));
 if(!list.length)return;
-setBatchMsg(`Laster ned ${list.length} faktura(er)...`);
-list.forEach((inv,idx)=>setTimeout(()=>{
-downloadInvoiceFile(inv,settings);
-if(idx===list.length-1){setBatchMsg(`✓ ${list.length} faktura(er) nedlastet. Åpne i Chrome → Ctrl+P → Lagre som PDF`);setTimeout(()=>setBatchMsg(""),10000);}
-},idx*800));
+(async()=>{
+for(let idx=0;idx<list.length;idx++){
+setBatchMsg(`Lager PDF ${idx+1} av ${list.length}…`);
+await downloadArchivedOrNew(list[idx],settings,()=>{});
+await new Promise(r=>setTimeout(r,600));
+}
+setBatchMsg(`✓ ${list.length} PDF(er) lastet ned`);setTimeout(()=>setBatchMsg(""),10000);
+})();
 };
 const selTotal=invoices.filter(i=>sel.includes(i.id)).reduce((s,i)=>s+(i.totalIncVat||0),0);
 const sc=s=>s==="betalt"?C.green:s==="utkast"?C.blueL:C.warn;
@@ -1000,7 +1076,7 @@ return(
 <td style={{padding:"9px 10px"}}><span onClick={()=>cycleStatus(inv.id)} title="Klikk for å endre" style={{fontSize:10,padding:"2px 9px",borderRadius:10,cursor:"pointer",background:`${sc(inv.status)}22`,color:sc(inv.status),fontWeight:600}}>{inv.status}</span></td>
 <td style={{padding:"9px 10px"}}><div style={{display:"flex",gap:5}}>
 <button onClick={()=>setPrintInvoice(inv)} style={{...Btn("sec"),fontSize:11,padding:"4px 10px"}}>Åpne</button>
-<button onClick={()=>openInvoicePrint(inv,settings)} style={{...Btn("ghost"),fontSize:11,padding:"4px 8px",border:`1px solid ${C.bdr}`}}>PDF</button>
+<button onClick={()=>downloadArchivedOrNew(inv,settings,m=>{setBatchMsg(m);if(m.startsWith("✓"))setTimeout(()=>setBatchMsg(""),8000);})} style={{...Btn("ghost"),fontSize:11,padding:"4px 8px",border:`1px solid ${C.bdr}`}}>PDF</button>
 <button onClick={()=>setConfirmDel(inv.id)} style={{...Btn("red"),fontSize:11,padding:"4px 8px"}}>Slett</button>
 </div></td>
 </tr>))}
