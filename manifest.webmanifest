@@ -17,7 +17,6 @@
   ],
   "shortcuts": [
     { "name": "Send forespørsel", "url": "/hjem.html#forespoersel", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Menyer", "url": "/meny.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Admin", "url": "/admin.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    { "name": "Menyer", "url": "/meny.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -10,6 +10,20 @@
   try { dismissed = +localStorage.getItem(KEY) > Date.now(); } catch (e) {}
   window.ttStandalone = standalone; window.ttIos = ios; window.ttCanPrompt = function () { return !!deferred; };
 
+  /* App-modus: ingen admin-tilgang i den installerte appen */
+  if (standalone) {
+    if (/admin\.html$/.test(path)) { location.replace("hjem.html"); return; }
+    var hideAdmin = function () {
+      document.body.classList.add("app-modus");
+      document.querySelectorAll('a[href$="admin.html"]').forEach(function (a) {
+        var prev = a.previousSibling;
+        if (prev && prev.nodeType === 3 && /·\s*$/.test(prev.textContent)) prev.textContent = prev.textContent.replace(/\s*·\s*$/, "");
+        var li = a.closest("li"); (li || a).remove();
+      });
+    };
+    if (document.readyState !== "loading") hideAdmin(); else addEventListener("DOMContentLoaded", hideAdmin);
+  }
+
   function removeBar() { var d = document.getElementById("tt-install"); if (d) d.remove(); }
   function bar() {
     if (standalone || document.getElementById("tt-install") || /index\.html$|\/$|admin\.html$|app\.html$/.test(path)) return;
