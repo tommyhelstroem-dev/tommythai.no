@@ -33,4 +33,33 @@
   });
   if (ios && !dismissed) { if (document.readyState !== "loading") bar(); else addEventListener("DOMContentLoaded", bar); }
   addEventListener("appinstalled", function () { removeBar(); document.dispatchEvent(new Event("tt-installed")); });
+
+  /* Fanelinje nederst på mobil – enklere navigasjon */
+  function tabs() {
+    if (/index\.html$|\/$|admin\.html$/.test(path) || document.querySelector(".tt-faner")) return;
+    var I = {
+      hjem: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M10 20v-5h4v5"/></svg>',
+      meny: '<svg viewBox="0 0 24 24"><path d="M7 3v8"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M7 11v10"/><path d="M16 3c-2 2-2 6-2 8h4c0-2 0-6-2-8z"/><path d="M16 11v10"/></svg>',
+      events: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></svg>',
+      send: '<svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7.5 2.5L13 21z"/><path d="M10.5 13 21 3"/></svg>',
+      mer: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
+    };
+    var here = path.replace(/^.*\//, "") || "hjem.html";
+    var items = [
+      ["hjem.html", "Hjem", I.hjem], ["meny.html", "Menyer", I.meny], ["events.html", "Events", I.events],
+      ["hjem.html#forespoersel", "Forespørsel", I.send, "cta"]
+    ];
+    var n = document.createElement("div"); n.className = "tt-faner"; n.setAttribute("role", "navigation"); n.setAttribute("aria-label", "Hurtigmeny");
+    n.innerHTML = items.map(function (it) {
+      var act = it[0] === here && !it[3] ? " aktiv" : "";
+      return '<a href="' + it[0] + '" class="' + (it[3] || "") + act + '">' + it[2] + '<span>' + it[1] + '</span></a>';
+    }).join("") + '<button type="button" id="tt-mer">' + I.mer + '<span>Meny</span></button>';
+    document.body.appendChild(n); document.body.classList.add("har-faner");
+    document.getElementById("tt-mer").addEventListener("click", function () {
+      var t = document.getElementById("nav-t"); if (t) { t.checked = !t.checked; if (t.checked) scrollTo({ top: 0, behavior: "smooth" }); }
+    });
+  }
+  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches) tabs(); }
+  if (document.readyState !== "loading") tabsIfMobile(); else addEventListener("DOMContentLoaded", tabsIfMobile);
+  addEventListener("resize", tabsIfMobile);
 })();

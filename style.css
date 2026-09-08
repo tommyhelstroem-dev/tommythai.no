@@ -95,3 +95,72 @@ article.post p{font-size:1.02rem}
 .velger{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
 .velger button{background:none;border:1px solid rgba(10,22,40,.3);border-radius:999px;padding:.4rem 1rem;cursor:pointer;font:inherit;color:inherit}
 .velger button.aktiv{background:#0a1628;color:#e6c85a;border-color:#0a1628}
+
+/* ── Mobil/app: større elementer og enklere navigasjon ── */
+@media(max-width:760px){
+html{font-size:18px}
+.nav-inn{padding:.8rem 1rem}
+.merke{font-size:1.05rem}
+.burger{font-size:2.1rem;padding:.1rem .6rem;line-height:1}
+.nav-l{padding:.6rem 1rem 1.2rem;gap:.35rem}
+.nav-l a{font-size:1.05rem;padding:1rem .9rem;letter-spacing:.05em;border-radius:8px;border-bottom:0;background:rgba(255,255,255,.05)}
+.nav-l a.aktiv{background:rgba(230,200,90,.12)}
+.nav-l a.cta{text-align:center;margin-top:.3rem;font-size:1.1rem}
+.nav-l a.admin{font-size:.95rem;margin:.3rem 0 0;text-align:center}
+header{padding:1.8rem 1rem 1.6rem}
+.under{font-size:.95rem;letter-spacing:.22em}
+.topp{padding:2rem 1.2rem}
+.topp h1{font-size:2rem}
+.topp p{font-size:1.1rem}
+main{padding:1.6rem 1.1rem 2.5rem}
+section{margin-bottom:2.2rem}
+h2{font-size:1.25rem;letter-spacing:.12em;margin-bottom:1rem;padding-bottom:.5rem}
+h3{font-size:1.4rem}
+p{font-size:1.12rem;line-height:1.65}
+.kort{gap:1.1rem}
+.kort>div,.kort>article{padding:1.4rem 1.3rem;border-radius:10px;border-top-width:4px}
+.kort strong{font-size:1.15rem;margin-bottom:.5rem}
+.kort span,.kort p{font-size:1.05rem;line-height:1.55}
+.knapp{padding:1.1rem 1.6rem;font-size:1.08rem;border-radius:10px;text-align:center}
+.knapper{gap:.9rem}
+.knapper .knapp{flex:1 1 100%;display:block}
+label{font-size:1rem;margin-bottom:.4rem}
+input,select,textarea{padding:1rem 1rem;font-size:1.1rem;min-height:56px;border-radius:8px;border-width:1.5px}
+textarea{min-height:150px}
+form{gap:1.1rem}
+.samtykke{font-size:1rem;line-height:1.5}
+.samtykke input{min-height:0;width:1.4rem;height:1.4rem;flex-shrink:0}
+.liten{font-size:.95rem}
+address{font-size:1.12rem}
+footer{font-size:1rem;padding:1.6rem 1rem;line-height:2}
+footer a{display:inline-block;padding:.2rem .3rem}
+.meny{padding:1.4rem 1.2rem;border-radius:10px}
+.meny li{font-size:1.12rem;padding:.7rem 0}
+.meny li em{font-size:1rem}
+.meny h3 small{font-size:.9rem}
+.pris{font-size:1rem}
+.galleri{grid-template-columns:1fr 1fr;gap:.8rem}
+.galleri figcaption{font-size:1rem;padding:.7rem .8rem}
+.event{padding:1.3rem 1.2rem;border-radius:10px;gap:.6rem}
+.event p{font-size:1.08rem}
+.dato b{font-size:1.6rem}
+.dato span{font-size:.95rem}
+.merkelapp{font-size:.82rem;padding:.3rem .65rem}
+article.post{padding:1.5rem 1.3rem;border-radius:10px}
+article.post h3{font-size:1.5rem}
+article.post p{font-size:1.1rem}
+.steg li{font-size:1.08rem;padding:.9rem 1rem .9rem 3.3rem}
+.velger button{padding:.6rem 1.2rem;font-size:1.05rem}
+.app-side .ikon{width:150px;height:150px;border-radius:32px}
+/* fanelinje nederst */
+body.har-faner main,body.har-faner footer{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+body.har-faner footer{margin-bottom:0}
+.tt-faner{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:80;display:flex;background:#0a1628;border-top:1px solid rgba(230,200,90,.35);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.tt-faner a,.tt-faner button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:68px;color:#c9d3e3;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:.78rem;letter-spacing:.04em;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tt-faner svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tt-faner .aktiv{color:#e6c85a}
+.tt-faner .aktiv svg{stroke-width:2.4}
+.tt-faner .cta{color:#0a1628;background:#c9a227;margin:6px;border-radius:12px;min-height:56px;font-weight:700}
+body.har-faner #tt-install{bottom:calc(68px + env(safe-area-inset-bottom))}
+}
+@media(min-width:761px){.tt-faner{display:none}}
