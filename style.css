@@ -164,3 +164,18 @@ body.har-faner footer{margin-bottom:0}
 body.har-faner #tt-install{bottom:calc(68px + env(safe-area-inset-bottom))}
 }
 @media(min-width:761px){.tt-faner{display:none}}
+
+/* ── Bildevisning (lightbox) ── */
+#tt-lys{position:fixed;inset:0;z-index:200;background:rgba(5,10,20,.96);display:none;align-items:center;justify-content:center}
+#tt-lys.vis{display:flex}
+.tt-lys-ramme{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:auto;-webkit-overflow-scrolling:touch}
+.tt-lys-ramme img{max-width:100%;max-height:100%;object-fit:contain;display:block;box-shadow:0 20px 60px rgba(0,0,0,.6);cursor:zoom-in}
+.tt-lys-ramme.zoom{display:block}
+.tt-lys-ramme.zoom img{max-width:none;max-height:none;width:auto;height:auto;min-width:100%;cursor:zoom-out}
+#tt-lys button{position:absolute;background:rgba(10,22,40,.75);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:50%;width:52px;height:52px;font-size:1.6rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tt-lys-x{top:calc(12px + env(safe-area-inset-top));right:12px}
+.tt-lys-p{left:8px;top:50%;transform:translateY(-50%)}
+.tt-lys-n{right:8px;top:50%;transform:translateY(-50%)}
+.tt-lys-tekst{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;color:#d7dde8;font-family:Arial,Helvetica,sans-serif;font-size:.95rem;padding:0 70px;pointer-events:none;text-shadow:0 1px 4px #000}
+.tt-lys-last{position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);color:#e6c85a;font-family:Arial,Helvetica,sans-serif;font-size:.8rem;letter-spacing:.1em;background:rgba(10,22,40,.75);padding:.35rem .8rem;border-radius:999px}
+.galleri img{background:#e9e4d6}
