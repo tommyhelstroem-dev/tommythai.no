@@ -14,7 +14,7 @@ nav{position:sticky;top:0;z-index:20;background:var(--safir-dyp);border-bottom:1
 .nav-l a.admin:hover{color:var(--gull-lys);border-color:var(--gull)}
 #nav-t{display:none}
 .burger{display:none;color:#fff;font-size:1.6rem;cursor:pointer;padding:.2rem .5rem}
-@media(max-width:940px){.burger{display:block}.nav-l{display:none;position:absolute;left:0;right:0;top:100%;background:var(--safir-dyp);flex-direction:column;padding:.5rem 1rem 1rem;border-bottom:1px solid rgba(230,200,90,.35)}#nav-t:checked~.nav-l{display:flex}.nav-l a{display:block;padding:.8rem .5rem;border-bottom:1px solid rgba(255,255,255,.08)}}
+@media(max-width:940px),(display-mode:standalone) and (max-width:1400px){.burger{display:block}.nav-l{display:none;position:absolute;left:0;right:0;top:100%;background:var(--safir-dyp);flex-direction:column;padding:.5rem 1rem 1rem;border-bottom:1px solid rgba(230,200,90,.35)}#nav-t:checked~.nav-l{display:flex}.nav-l a{display:block;padding:.8rem .5rem;border-bottom:1px solid rgba(255,255,255,.08)}}
 header{padding:2.5rem 1.5rem 2rem;text-align:center;background:var(--safir-dyp)}
 .logo{width:min(560px,92vw);height:auto;display:block;margin:0 auto 1.25rem;border-radius:32px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -52,7 +52,7 @@ textarea{min-height:120px;resize:vertical}
 .samtykke input{width:auto;margin-top:.3rem}
 .samtykke a{color:var(--safir)}
 .liten{font-size:.85rem;color:var(--tekst-svak)}
-@media(max-width:520px){.rad{grid-template-columns:1fr}}
+@media(max-width:520px),(display-mode:standalone) and (max-width:1400px){.rad{grid-template-columns:1fr}}
 .meny{background:rgba(255,253,247,.74);border:1px solid var(--linje);border-radius:6px;padding:1.4rem 1.5rem;margin-bottom:1.4rem}
 .meny h3{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
 .meny h3 small{font-family:Arial,Helvetica,sans-serif;font-size:.8rem;color:var(--gull);letter-spacing:.1em;text-transform:uppercase}
@@ -72,7 +72,7 @@ textarea{min-height:120px;resize:vertical}
 .merkelapp{display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;background:var(--safir);color:#fff;padding:.2rem .5rem;border-radius:3px;margin-bottom:.4rem}
 .merkelapp.popup{background:var(--gull);color:var(--safir-dyp)}
 .event p{font-size:.98rem;margin-bottom:.4rem}
-@media(max-width:520px){.event{grid-template-columns:1fr}.dato{border:0;padding:0;text-align:left}.dato b{display:inline;font-size:1.3rem;margin-right:.4rem}}
+@media(max-width:520px),(display-mode:standalone) and (max-width:1400px){.event{grid-template-columns:1fr}.dato{border:0;padding:0;text-align:left}.dato b{display:inline;font-size:1.3rem;margin-right:.4rem}}
 article.post{background:rgba(255,253,247,.74);border:1px solid var(--linje);border-radius:6px;padding:1.5rem 1.6rem;margin-bottom:1.4rem}
 article.post .meta{font-family:Arial,Helvetica,sans-serif;font-size:.8rem;color:var(--gull);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem}
 article.post h3{font-size:1.4rem}
@@ -97,7 +97,7 @@ article.post p{font-size:1.02rem}
 .velger button.aktiv{background:#0a1628;color:#e6c85a;border-color:#0a1628}
 
 /* ── Mobil/app: større elementer og enklere navigasjon ── */
-@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
+@media(max-width:760px),(display-mode:standalone) and (max-width:1400px){
 html{font-size:18px}
 .nav-inn{padding:.8rem 1rem}
 .merke{font-size:1.05rem}
@@ -181,7 +181,7 @@ body.har-faner #tt-install{bottom:calc(68px + env(safe-area-inset-bottom))}
 .galleri img{background:#e9e4d6}
 
 /* ── App v2: større tekst + én Meny-knapp med alle temaene ── */
-@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
+@media(max-width:760px),(display-mode:standalone) and (max-width:1400px){
 html{font-size:20px}
 p{font-size:1.1rem;line-height:1.6}
 h2{font-size:1.2rem}
@@ -212,8 +212,8 @@ body.meny-aapen #tt-install{display:none}
 }
 
 /* ── Tekst +30% på mobil/app ── */
-@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
-html{font-size:26px}
+@media(max-width:760px),(display-mode:standalone) and (max-width:1400px){
+html{font-size:clamp(18px,6.5vw,70px)}
 .merke{font-size:.9rem}
 .nav-l a{font-size:1.15rem;padding:.9rem .9rem}
 .nav-l a.cta{font-size:1.15rem}

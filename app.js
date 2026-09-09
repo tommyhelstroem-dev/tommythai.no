@@ -12,6 +12,12 @@
 
   /* App-modus: ingen admin-tilgang i den installerte appen */
   if (standalone) {
+    // Store skjermer (foldetelefon, nettbrett, "desktop"-visning): lås appen til mobilbredde så teksten blir stor
+    if (screen.width > 760 || innerWidth > 760) {
+      var vp = document.querySelector('meta[name="viewport"]');
+      if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
+      vp.content = "width=480, initial-scale=1, viewport-fit=cover";
+    }
     if (/admin\.html$/.test(path)) { location.replace("hjem.html"); return; }
     var hideAdmin = function () {
       document.body.classList.add("app-modus");
@@ -96,7 +102,7 @@
     ul.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { t.checked = false; sync(); }); });
     sync();
   }
-  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches || (standalone && matchMedia("(max-width: 1100px)").matches)) menuButton(); }
+  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches || (standalone && matchMedia("(max-width: 1400px)").matches)) menuButton(); }
   /* Bilder: små, raske miniatyrer i galleriet – full oppløsning når du trykker */
   var THUMB_W = 640, FULL_W = 2000;
   function scaled(src, w) {
