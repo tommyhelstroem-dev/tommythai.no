@@ -228,3 +228,8 @@ h2{font-size:1.1rem;letter-spacing:.08em}
 /* ── Kun i installert app: skjul web-seksjoner, én kolonne ── */
 body.app-modus .kun-web{display:none}
 @media(max-width:760px),(display-mode:standalone) and (max-width:1400px){.kort{grid-template-columns:1fr}}
+
+/* ── Toppmeny: aldri vannrett scrolling (bryt til ny linje på smale PC-bredder) ── */
+body{overflow-x:clip}
+.nav-inn{flex-wrap:wrap;row-gap:.3rem}
+.nav-l{flex-wrap:wrap;justify-content:flex-end;row-gap:.2rem}
