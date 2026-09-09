@@ -96,7 +96,7 @@
     ul.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { t.checked = false; sync(); }); });
     sync();
   }
-  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches) menuButton(); }
+  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches || (standalone && matchMedia("(max-width: 1100px)").matches)) menuButton(); }
   /* Bilder: små, raske miniatyrer i galleriet – full oppløsning når du trykker */
   var THUMB_W = 640, FULL_W = 2000;
   function scaled(src, w) {

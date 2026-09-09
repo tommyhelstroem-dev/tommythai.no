@@ -1,5 +1,5 @@
 /* Tommythai service worker – gjør siden installerbar og delvis tilgjengelig uten nett */
-const V = "tommythai-v2";
+const V = "tommythai-v3";
 const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/bilder.html", "/events.html", "/artikler.html",
   "/personvern.html", "/takk.html", "/app.html", "/forespoersel.html", "/style.css", "/app.js", "/logo.jpg", "/logo_mark.svg",
   "/favicon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
@@ -18,7 +18,7 @@ self.addEventListener("fetch", e => {
   const isDoc = req.mode === "navigate" || /\.(html|css|js|webmanifest)$/.test(url.pathname) || url.pathname.endsWith("/");
   if (isDoc) {
     // Nettverk først – alltid nyeste versjon når du er på nett, cache når du er uten nett
-    e.respondWith(fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(V).then(c => c.put(req, cp)); } return r; })
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(V).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req).then(r => r || (req.mode === "navigate" ? caches.match("/hjem.html") : undefined))));
   } else {
     // Bilder og annet: cache først, hent i bakgrunnen

@@ -97,7 +97,7 @@ article.post p{font-size:1.02rem}
 .velger button.aktiv{background:#0a1628;color:#e6c85a;border-color:#0a1628}
 
 /* ── Mobil/app: større elementer og enklere navigasjon ── */
-@media(max-width:760px){
+@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
 html{font-size:18px}
 .nav-inn{padding:.8rem 1rem}
 .merke{font-size:1.05rem}
@@ -181,7 +181,7 @@ body.har-faner #tt-install{bottom:calc(68px + env(safe-area-inset-bottom))}
 .galleri img{background:#e9e4d6}
 
 /* ── App v2: større tekst + én Meny-knapp med alle temaene ── */
-@media(max-width:760px){
+@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
 html{font-size:20px}
 p{font-size:1.1rem;line-height:1.6}
 h2{font-size:1.2rem}
@@ -212,7 +212,7 @@ body.meny-aapen #tt-install{display:none}
 }
 
 /* ── Tekst +30% på mobil/app ── */
-@media(max-width:760px){
+@media(max-width:760px),(display-mode:standalone) and (max-width:1100px){
 html{font-size:26px}
 .merke{font-size:.9rem}
 .nav-l a{font-size:1.15rem;padding:.9rem .9rem}
