@@ -1,6 +1,6 @@
 /* Tommythai service worker – gjør siden installerbar og delvis tilgjengelig uten nett */
-const V = "tommythai-v3";
-const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/bilder.html", "/events.html", "/artikler.html",
+const V = "tommythai-v4";
+const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/oppskrifter.html", "/bilder.html", "/events.html", "/artikler.html",
   "/personvern.html", "/takk.html", "/app.html", "/forespoersel.html", "/style.css", "/app.js", "/logo.jpg", "/logo_mark.svg",
   "/favicon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
