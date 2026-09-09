@@ -210,3 +210,17 @@ body.meny-aapen #tt-install{display:none}
 .nav-l a.admin{font-size:.95rem;color:#8a98b0;background:none;border:1px dashed rgba(255,255,255,.2);margin-top:.6rem;padding:.8rem 1rem}
 .nav-l a.admin svg{width:22px;height:22px;stroke:#8a98b0}
 }
+
+/* ── Tekst +30% på mobil/app ── */
+@media(max-width:760px){
+html{font-size:26px}
+.merke{font-size:.9rem}
+.nav-l a{font-size:1.15rem;padding:.9rem .9rem}
+.nav-l a.cta{font-size:1.15rem}
+.tt-menyknapp button{font-size:1.1rem;min-height:68px}
+.topp h1{font-size:1.7rem}
+h2{font-size:1.1rem;letter-spacing:.08em}
+.kort>div,.kort>article{padding:1.1rem 1rem}
+.galleri{grid-template-columns:1fr}
+.steg li{font-size:1rem}
+}
