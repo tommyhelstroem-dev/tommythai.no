@@ -1,7 +1,7 @@
 /* Tommythai service worker – gjør siden installerbar og delvis tilgjengelig uten nett */
-const V = "tommythai-v1";
+const V = "tommythai-v2";
 const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/bilder.html", "/events.html", "/artikler.html",
-  "/personvern.html", "/takk.html", "/app.html", "/style.css", "/app.js", "/logo.jpg", "/logo_mark.svg",
+  "/personvern.html", "/takk.html", "/app.html", "/forespoersel.html", "/style.css", "/app.js", "/logo.jpg", "/logo_mark.svg",
   "/favicon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", e => {

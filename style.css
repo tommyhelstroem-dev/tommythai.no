@@ -179,3 +179,34 @@ body.har-faner #tt-install{bottom:calc(68px + env(safe-area-inset-bottom))}
 .tt-lys-tekst{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;color:#d7dde8;font-family:Arial,Helvetica,sans-serif;font-size:.95rem;padding:0 70px;pointer-events:none;text-shadow:0 1px 4px #000}
 .tt-lys-last{position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);color:#e6c85a;font-family:Arial,Helvetica,sans-serif;font-size:.8rem;letter-spacing:.1em;background:rgba(10,22,40,.75);padding:.35rem .8rem;border-radius:999px}
 .galleri img{background:#e9e4d6}
+
+/* ── App v2: større tekst + én Meny-knapp med alle temaene ── */
+@media(max-width:760px){
+html{font-size:20px}
+p{font-size:1.1rem;line-height:1.6}
+h2{font-size:1.2rem}
+.kort strong{font-size:1.15rem}
+.tt-faner{display:none}
+/* Meny-knapp nederst */
+.tt-menyknapp{position:fixed;left:0;right:0;bottom:0;z-index:96;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#0a1628;border-top:1px solid rgba(230,200,90,.35);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.tt-menyknapp button{width:100%;min-height:64px;background:#c9a227;color:#0a1628;border:0;border-radius:14px;font-family:Arial,Helvetica,sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:.7rem;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tt-menyknapp button:active{background:#e6c85a}
+.tt-menyknapp svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+body.har-faner main,body.har-faner footer{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+body.har-faner #tt-install{bottom:calc(86px + env(safe-area-inset-bottom))}
+body.meny-aapen{overflow:hidden}
+body.meny-aapen #tt-install{display:none}
+/* Selve menyen: fullskjerm med store temaer */
+.burger{display:none}
+#nav-t:checked~.nav-l{display:flex;position:fixed;inset:0;top:0;z-index:95;flex-direction:column;gap:.5rem;padding:0 1rem calc(110px + env(safe-area-inset-bottom));overflow-y:auto;background:#0a1628;border:0}
+.nav-l li{list-style:none}
+.nav-l .nav-topp{display:flex;align-items:center;justify-content:space-between;padding:calc(1rem + env(safe-area-inset-top)) .2rem .8rem;color:#e6c85a;font-family:Arial,Helvetica,sans-serif;font-size:1rem;letter-spacing:.25em;text-transform:uppercase;border-bottom:1px solid rgba(230,200,90,.35);margin-bottom:.4rem}
+.nav-lukk{background:none;border:1px solid rgba(255,255,255,.25);color:#fff;width:48px;height:48px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+.nav-l a{display:flex;align-items:center;gap:1rem;font-size:1.3rem;padding:1.05rem 1rem;letter-spacing:.03em;text-transform:none;border-radius:14px;background:rgba(255,255,255,.06);color:#fff}
+.nav-l a svg{width:32px;height:32px;flex-shrink:0;fill:none;stroke:#e6c85a;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav-l a.aktiv{background:rgba(230,200,90,.16);color:#e6c85a}
+.nav-l a.cta{background:#c9a227;color:#0a1628;justify-content:flex-start;font-size:1.3rem;margin-top:.4rem}
+.nav-l a.cta svg{stroke:#0a1628}
+.nav-l a.admin{font-size:.95rem;color:#8a98b0;background:none;border:1px dashed rgba(255,255,255,.2);margin-top:.6rem;padding:.8rem 1rem}
+.nav-l a.admin svg{width:22px;height:22px;stroke:#8a98b0}
+}

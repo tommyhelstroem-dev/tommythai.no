@@ -48,31 +48,55 @@
   if (ios && !dismissed) { if (document.readyState !== "loading") bar(); else addEventListener("DOMContentLoaded", bar); }
   addEventListener("appinstalled", function () { removeBar(); document.dispatchEvent(new Event("tt-installed")); });
 
-  /* Fanelinje nederst på mobil – enklere navigasjon */
-  function tabs() {
-    if (/index\.html$|\/$|admin\.html$/.test(path) || document.querySelector(".tt-faner")) return;
-    var I = {
-      hjem: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M10 20v-5h4v5"/></svg>',
-      meny: '<svg viewBox="0 0 24 24"><path d="M7 3v8"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M7 11v10"/><path d="M16 3c-2 2-2 6-2 8h4c0-2 0-6-2-8z"/><path d="M16 11v10"/></svg>',
-      events: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></svg>',
-      send: '<svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7.5 2.5L13 21z"/><path d="M10.5 13 21 3"/></svg>',
-      mer: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
-    };
-    var here = path.replace(/^.*\//, "") || "hjem.html";
-    var items = [
-      ["hjem.html", "Hjem", I.hjem], ["meny.html", "Menyer", I.meny], ["events.html", "Events", I.events],
-      ["hjem.html#forespoersel", "Forespørsel", I.send, "cta"]
-    ];
-    var n = document.createElement("div"); n.className = "tt-faner"; n.setAttribute("role", "navigation"); n.setAttribute("aria-label", "Hurtigmeny");
-    n.innerHTML = items.map(function (it) {
-      var act = it[0] === here && !it[3] ? " aktiv" : "";
-      return '<a href="' + it[0] + '" class="' + (it[3] || "") + act + '">' + it[2] + '<span>' + it[1] + '</span></a>';
-    }).join("") + '<button type="button" id="tt-mer">' + I.mer + '<span>Meny</span></button>';
-    document.body.appendChild(n); document.body.classList.add("har-faner");
-    document.getElementById("tt-mer").addEventListener("click", function () {
-      var t = document.getElementById("nav-t"); if (t) { t.checked = !t.checked; if (t.checked) scrollTo({ top: 0, behavior: "smooth" }); }
+  /* Én stor Meny-knapp nederst på mobil – åpner hele menyen med alle temaene */
+  var ICONS = {
+    "hjem.html": '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M10 20v-5h4v5"/></svg>',
+    "artikler.html": '<svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    "bilder.html": '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17l5-4 3 2.5 3-3.5 5 5"/></svg>',
+    "meny.html": '<svg viewBox="0 0 24 24"><path d="M7 3v8"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M7 11v10"/><path d="M16 3c-2 2-2 6-2 8h4c0-2 0-6-2-8z"/><path d="M16 11v10"/></svg>',
+    "events.html": '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></svg>',
+    "app.html": '<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></svg>',
+    "forespoersel.html": '<svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7.5 2.5L13 21z"/><path d="M10.5 13 21 3"/></svg>',
+    "personvern.html": '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+    "admin.html": '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
+  };
+  function menuButton() {
+    if (/index\.html$|\/$|admin\.html$/.test(path) || document.querySelector(".tt-menyknapp")) return;
+    var t = document.getElementById("nav-t"), ul = document.querySelector(".nav-l");
+    if (!t || !ul) return;
+    // ikoner + overskrift i menyen
+    ul.querySelectorAll("a").forEach(function (a) {
+      var key = a.getAttribute("href");
+      if (key === "forespoersel.html" && !a.dataset.relabel) { a.dataset.relabel = "1"; a.textContent = "Catering-forespørsel"; }
+      if (ICONS[key] && !a.querySelector("svg")) a.insertAdjacentHTML("afterbegin", ICONS[key]);
     });
+    if (!ul.querySelector(".nav-topp")) {
+      var li = document.createElement("li"); li.className = "nav-topp";
+      li.innerHTML = '<span>Meny</span><button type="button" class="nav-lukk" aria-label="Lukk menyen">&#10005;</button>';
+      ul.insertBefore(li, ul.firstChild);
+      li.querySelector("button").addEventListener("click", function () { t.checked = false; sync(); });
+    }
+    if (!ul.querySelector(".nav-personvern")) {
+      var lp = document.createElement("li"); lp.className = "nav-personvern";
+      lp.innerHTML = '<a href="personvern.html">' + ICONS["personvern.html"] + 'Personvern</a>';
+      var adm = ul.querySelector("a.admin"); if (adm) ul.insertBefore(lp, adm.closest("li")); else ul.appendChild(lp);
+    }
+    var wrap = document.createElement("div"); wrap.className = "tt-menyknapp";
+    wrap.innerHTML = '<button type="button" id="tt-meny-btn" aria-controls="nav-t" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Meny</span></button>';
+    document.body.appendChild(wrap); document.body.classList.add("har-faner");
+    var btn = wrap.querySelector("button");
+    function sync() {
+      var open = t.checked;
+      document.body.classList.toggle("meny-aapen", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.innerHTML = open ? '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Lukk</span>' : '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Meny</span>';
+    }
+    btn.addEventListener("click", function () { t.checked = !t.checked; sync(); });
+    t.addEventListener("change", sync);
+    ul.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { t.checked = false; sync(); }); });
+    sync();
   }
+  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches) menuButton(); }
   /* Bilder: små, raske miniatyrer i galleriet – full oppløsning når du trykker */
   var THUMB_W = 640, FULL_W = 2000;
   function scaled(src, w) {
@@ -133,7 +157,6 @@
   function closeLightbox() { var lb = document.getElementById("tt-lys"); if (lb) { lb.classList.remove("vis"); document.body.style.overflow = ""; } }
   if (document.readyState !== "loading") prepImages(); else addEventListener("DOMContentLoaded", prepImages);
 
-  function tabsIfMobile() { if (matchMedia("(max-width: 760px)").matches) tabs(); }
   if (document.readyState !== "loading") tabsIfMobile(); else addEventListener("DOMContentLoaded", tabsIfMobile);
   addEventListener("resize", tabsIfMobile);
 })();

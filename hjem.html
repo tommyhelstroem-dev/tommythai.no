@@ -26,7 +26,7 @@
 <li><a href="meny.html">Menyer</a></li>
 <li><a href="events.html">Events &amp; pop-ups</a></li>
 <li><a href="app.html">Last ned app</a></li>
-<li><a class="cta" href="hjem.html#forespoersel">Forespørsel</a></li>
+<li><a class="cta" href="forespoersel.html">Forespørsel</a></li>
 <li><a class="admin" href="admin.html" title="Kun for administrator">Admin logg inn</a></li>
 </ul></div></nav>
 <header>
@@ -61,41 +61,6 @@
 </div>
 </section>
 
-<section id="forespoersel">
-<h2>Send catering-forespørsel</h2>
-<p class="liten">Fyll ut skjemaet, så svarer jeg på e-post – normalt innen 1–2 virkedager.</p>
-<form action="https://api.web3forms.com/submit" method="POST">
-<input type="hidden" name="access_key" value="9103aeab-246b-48b5-8df5-68ad47ae24ba">
-<input type="hidden" name="subject" value="Catering-forespørsel via tommythai.no">
-<input type="hidden" name="from_name" value="tommythai.no">
-<input type="hidden" name="redirect" value="https://tommythai.no/takk.html">
-<input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
-<div class="rad">
-<div><label for="navn">Navn *</label><input id="navn" name="Navn" type="text" required autocomplete="name"></div>
-<div><label for="epost">E-post *</label><input id="epost" name="email" type="email" required autocomplete="email"></div>
-</div>
-<div class="rad">
-<div><label for="tlf">Telefon</label><input id="tlf" name="Telefon" type="tel" autocomplete="tel"></div>
-<div><label for="dato">Ønsket dato</label><input id="dato" name="Dato" type="date"></div>
-</div>
-<div class="rad">
-<div><label for="gjester">Antall gjester</label><input id="gjester" name="Antall gjester" type="number" min="1" inputmode="numeric"></div>
-<div><label for="type">Type arrangement</label>
-<select id="type" name="Type arrangement">
-<option value="">Velg…</option>
-<option>Selskap / privat</option>
-<option>Bedrift / kantine</option>
-<option>Bryllup</option>
-<option>Konferanse / event</option>
-<option>Annet</option>
-</select></div>
-</div>
-<div><label for="melding">Melding *</label><textarea id="melding" name="Melding" required placeholder="Fortell kort om arrangementet, sted og ønsker."></textarea></div>
-<label class="samtykke"><input type="checkbox" name="Samtykke" value="Ja" required> Jeg samtykker til at opplysningene brukes til å besvare forespørselen min. De deles ikke videre og slettes når saken er avsluttet. <a href="personvern.html" target="_blank" rel="noopener">Les personvernerklæringen.</a></label>
-<div class="h-captcha" data-captcha="true"></div>
-<div class="knapper"><button class="knapp" type="submit">Send forespørsel</button></div>
-</form>
-</section>
 
 <section>
 <h2>Kontakt</h2>
@@ -104,11 +69,11 @@
 <p>E-post: <a href="mailto:tommy.helstroem@gmail.com">tommy.helstroem@gmail.com</a></p>
 </address>
 <div class="knapper">
-<a class="knapp" href="mailto:tommy.helstroem@gmail.com">Send e-post</a>
+<a class="knapp" href="forespoersel.html">Send catering-forespørsel</a>
+<a class="knapp lys" href="mailto:tommy.helstroem@gmail.com">Send e-post</a>
 </div>
 </section>
 </main>
-<script src="https://web3forms.com/client/script.js" async defer></script>
 <footer>© 2026 <b>Tommythai</b> · Worldwide · <a href="personvern.html">Personvern</a> · <a href="app.html">Last ned app</a> · <a href="admin.html">Admin logg inn</a></footer>
 <script src="app.js" defer></script>
 </body>
