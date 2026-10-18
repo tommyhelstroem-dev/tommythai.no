@@ -1,6 +1,6 @@
 /* Tommythai service worker – gjør siden installerbar og delvis tilgjengelig uten nett */
 const V = "tommythai-v4";
-const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/oppskrifter.html", "/bilder.html", "/events.html", "/artikler.html",
+const PRE = ["/", "/index.html", "/hjem.html", "/meny.html", "/oppskrifter.html", "/oppskrifter-kaker.html", "/oppskrifter-bakverk.html", "/oppskrifter-brod.html", "/oppskrifter-surdeig.html", "/oppskrifter-kjott.html", "/oppskrifter-fisk.html", "/oppskrifter-krydder.html", "/oppskrifter-saus.html", "/oppskrifter-supper.html", "/oppskrifter-dessert.html", "/oppskrifter-annet.html", "/bilder.html", "/events.html", "/artikler.html",
   "/personvern.html", "/takk.html", "/app.html", "/forespoersel.html", "/style.css", "/app.js", "/logo.jpg", "/logo_mark.svg",
   "/favicon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
